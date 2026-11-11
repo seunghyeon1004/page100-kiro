@@ -1,0 +1,4 @@
+{
+  "comment": "Imitates the body the Hacker News item endpoint returns for an unknown item: the JSON value null (the recorded 2026-11-11-item-*.json files are all objects)",
+  "body": null
+}

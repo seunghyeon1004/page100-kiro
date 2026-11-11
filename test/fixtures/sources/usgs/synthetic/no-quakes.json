@@ -1,0 +1,8 @@
+{
+  "comment": "Imitates 2026-11-11-quakes.json (metadata and features) for a quiet day with no earthquake: metadata.count 0 and an empty features list",
+  "body": {
+    "type": "FeatureCollection",
+    "metadata": { "generated": 1794381366000, "count": 0, "status": 200 },
+    "features": []
+  }
+}

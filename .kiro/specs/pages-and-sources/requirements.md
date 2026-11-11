@@ -33,6 +33,17 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 - `AltBlock` headings are level 2 or 3. The renderer writes the single `<h1>` from the registry (`frontend.md`).
 - The response size cap is 5 MiB, 5,242,880 bytes.
 
+## Owner answers (2026-11-11)
+
+1. **News extracts.** Each `news` item in the featured feed has `links`, and each link is an article summary object with `extract`. This is to be confirmed against the recorded fixture. IF the fixture does not show it, THEN the Wikimedia feed task (11.1) stops and says so.
+2. **Confirmed decisions.** Previous and next page wrap (3.2). Static pages have a blank row 22 (7.1). The featured fetch succeeds when only one of the two days returns (13.1).
+3. **Frame colours confirmed** as in 6.1, 6.2, 7.2 and 7.3: row 0 page number white, service name cyan, clock yellow; row 1 yellow on blue; row 22 cyan.
+4. **Fixture recording.** Kiro is authorised to run `npx tsx scripts/record-fixtures.ts` once in the implementing session (task 10). That script is the only network use besides `npm install`. If a source fails, the others are recorded and the tasks that depend on the failed source stay unticked. `public/` and `scripts/subset-font.sh` belong to the owner and are left alone.
+
+5. **Lint and fonts (2026-11-11).** `public/fonts/` is added to `.prettierignore` (after `src/sources/snapshot/`), and `test/scaffold.test.ts` lists it exactly. Tasks 1.2 and 9 are then finished and ticked. Requirement 1.3 reads accordingly.
+6. **Launch Library (2026-11-11).** Keep `mode=list` (one request, small response). `Launches` drops `provider` and `pad`. The normaliser splits `name` on `" | "` into `rocket` and `mission`; with no separator the whole name is the mission and `rocket` is `null`. `net` is the time and `status.abbrev` is the status.
+7. **Nulls (2026-11-11).** The providers document that these values can be null. Exactly these wire fields allow null: Open-Meteo `current.temperature_2m`, `current.weather_code`, `current.wind_speed_10m` and every element of the `daily` arrays read (`weather_code`, `temperature_2m_max`, `temperature_2m_min`, `precipitation_probability_max`); USGS `properties.mag`, `properties.place` and the depth coordinate (third coordinate). A null becomes `null` in the normalised value (compilers show n/a). A USGS feature with a null magnitude is dropped. No other schema is loosened. Each case has a synthetic fixture whose `comment` names the provider documentation as the reason, and a test (12.3, 16.4).
+
 ## Requirement 1: Project changes
 
 **User story:** As a developer, I want the two new packages and the scripts folder wired into the existing checks, so that the gate covers the new code.
@@ -41,7 +52,7 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 
 1.2 THE `tsconfig.json` `include` SHALL be exactly `["src", "test", "scripts", "vitest.config.ts"]`, AND `tsconfig.build.json` SHALL still include only `src`.
 
-1.3 THE `.prettierignore` file SHALL list the grid-core entries followed by `src/sources/snapshot/`.
+1.3 THE `.prettierignore` file SHALL list the grid-core entries followed by `src/sources/snapshot/` and `public/fonts/` (owner answer 5).
 
 1.4 THE `test/scaffold.test.ts` checks SHALL match requirements 1.1 to 1.3 exactly.
 

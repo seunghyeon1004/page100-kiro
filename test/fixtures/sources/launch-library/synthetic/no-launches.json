@@ -1,0 +1,9 @@
+{
+  "comment": "Imitates 2026-11-11-launches.json (mode=list) with an empty results list",
+  "body": {
+    "count": 0,
+    "next": "https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=8&mode=list&offset=8",
+    "previous": null,
+    "results": []
+  }
+}

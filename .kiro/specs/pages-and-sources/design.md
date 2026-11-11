@@ -205,11 +205,11 @@ interface Rates { base: "USD"; date: string; rates: { code: string; rate: number
 interface HackerNews { top: HnStory[]; show: HnStory[]; ask: HnStory[] /* each at most 12 */ }
 interface HnStory { id: number; title: string; by: string | null; score: number | null; comments: number | null; time: Iso; url: string | null }
 interface Quakes { generatedAt: Iso; quakes: { id: string; magnitude: number | null; place: string | null; time: Iso; depthKm: number | null; latitude: number; longitude: number }[] }
-interface Launches { launches: { id: string; name: string; net: Iso; status: string | null; provider: string | null; pad: string | null }[] }
+interface Launches { launches: { id: string; rocket: string | null; mission: string; net: Iso; status: string | null }[] } // name split on " | " (owner answer 6)
 interface Snapshot { version: 1; sources: { [S in SourceId]: { fetchedAt: Iso; value: ValueOf<S> } } }
 ```
 
-Normalisers map `-0` to `0`, convert local Open-Meteo times to UTC with the response's UTC offset, keep USGS order as delivered, and sort series points by date. The normalised schemas use `z.number()` with a refinement that rejects `-0`; a test checks that they reject `NaN`, `Infinity` and `-Infinity`.
+Nulls are allowed on exactly the wire fields of requirement "Owner answers" 7 (Open-Meteo current and daily values, USGS `mag`, `place`, depth); a USGS feature with null `mag` is dropped. Normalisers map `-0` to `0`, convert local Open-Meteo times to UTC with the response's UTC offset, keep USGS order as delivered, and sort series points by date. The normalised schemas use `z.number()` with a refinement that rejects `-0`; a test checks that they reject `NaN`, `Infinity` and `-Infinity`.
 
 ## Schedule
 

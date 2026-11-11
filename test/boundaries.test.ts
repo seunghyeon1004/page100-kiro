@@ -71,6 +71,78 @@ describe("module boundaries (requirements 18.1 and 18.2)", () => {
   });
 });
 
+describe("module boundaries (pages-and-sources 17.1)", () => {
+  /** Each import or re-export statement of a file: its specifier and whether it is `import type` / `export type`. */
+  function statements(source: string): { specifier: string; typeOnly: boolean }[] {
+    const found: { specifier: string; typeOnly: boolean }[] = [];
+    for (const match of source.matchAll(
+      /\b(import|export)(\s+type)?\b[^;]*?\bfrom\s+["']([^"']+)["']/g,
+    )) {
+      if (match[3] !== undefined)
+        found.push({ specifier: match[3], typeOnly: match[2] !== undefined });
+    }
+    return found;
+  }
+
+  it("lets src/pages import only src/pages, src/grid, src/markup and, type-only, src/sources/source-id", () => {
+    for (const file of tsFiles("src/pages")) {
+      const source = read(file);
+      for (const { specifier, typeOnly } of statements(source)) {
+        const target = resolvedTarget(file, specifier);
+        const allowed =
+          isInside(target, "src/pages") ||
+          isInside(target, "src/grid") ||
+          isInside(target, "src/markup") ||
+          (typeOnly && target === "src/sources/source-id.js");
+        expect(allowed, `${file} imports ${specifier}`).toBe(true);
+      }
+      expect(specifiers(source).length, `${file} has an import form the scan misses`).toBe(
+        statements(source).length,
+      );
+    }
+  });
+
+  it("lets src/sources import only src/sources and zod", () => {
+    for (const file of tsFiles("src/sources")) {
+      for (const specifier of specifiers(read(file))) {
+        const target = resolvedTarget(file, specifier);
+        const allowed = target === "zod" || isInside(target, "src/sources");
+        expect(allowed, `${file} imports ${specifier}`).toBe(true);
+      }
+    }
+  });
+
+  it("keeps scripts, tools and test out of every import in src", () => {
+    for (const file of tsFiles("src")) {
+      for (const specifier of specifiers(read(file))) {
+        const target = resolvedTarget(file, specifier);
+        for (const dir of ["scripts", "tools", "test"]) {
+          expect(isInside(target, dir), `${file} imports ${specifier}`).toBe(false);
+        }
+      }
+    }
+  });
+});
+
+describe("determinism (pages-and-sources 17.2)", () => {
+  it("keeps the clock, randomness, process, globalThis and global fetch out of src/pages and src/sources", () => {
+    const banned = [
+      /\bDate\.now\b/,
+      /\bnew Date\(\s*\)/,
+      /\bMath\.random\b/,
+      /\bprocess\b/,
+      /\bglobalThis\b/,
+      /(?<![.\w])fetch\s*\(/,
+    ];
+    for (const file of [...tsFiles("src/pages"), ...tsFiles("src/sources")]) {
+      const source = read(file);
+      for (const pattern of banned) {
+        expect(pattern.test(source), `${file} matches ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+});
+
 describe("determinism (requirement 18.3)", () => {
   it("keeps the clock, randomness, process and global objects out of src/grid and src/markup", () => {
     const banned = [/\bDate\b/, /\bMath\.random\b/, /\bprocess\b/, /\bglobalThis\b/];
@@ -117,7 +189,7 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
   });
 });
 
-describe("type and lint escapes (requirement 20.2)", () => {
+describe("type and lint escapes (requirement 20.2, amended by pages-and-sources Departure 3)", () => {
   const ignoreText = "@ts-" + "ignore";
   const eslintText = "eslint-" + "disable";
   const expectError = "@ts-" + "expect-error";
@@ -132,11 +204,12 @@ describe("type and lint escapes (requirement 20.2)", () => {
     }
   });
 
-  it("names grid-core on every expect-error line in src or test", () => {
+  it("names grid-core or pages-and-sources on every expect-error line in src or test", () => {
     for (const file of [...tsFiles("src"), ...tsFiles("test")]) {
       for (const line of read(file).split("\n")) {
         if (line.includes(expectError)) {
-          expect(line.includes("grid-core"), `${file}: ${line.trim()}`).toBe(true);
+          const named = line.includes("grid-core") || line.includes("pages-and-sources");
+          expect(named, `${file}: ${line.trim()}`).toBe(true);
         }
       }
     }

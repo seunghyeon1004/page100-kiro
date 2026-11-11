@@ -1,0 +1,9 @@
+{
+  "url": "https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=8&mode=list",
+  "fetchedAt": "2026-11-11T07:16:42.304Z",
+  "status": 200,
+  "query": {
+    "limit": "8",
+    "mode": "list"
+  }
+}

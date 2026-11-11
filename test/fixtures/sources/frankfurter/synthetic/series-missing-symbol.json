@@ -1,0 +1,12 @@
+{
+  "comment": "Imitates 2026-11-11-series.json (a series body) with INR missing from one date, which the recorded response never shows",
+  "body": {
+    "amount": 1,
+    "base": "USD",
+    "start_date": "2026-11-10",
+    "end_date": "2026-11-10",
+    "rates": {
+      "2026-11-10": { "CNY": 6.6703, "EUR": 0.89174, "GBP": 0.74501, "JPY": 158.18, "KRW": 1339 }
+    }
+  }
+}

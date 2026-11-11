@@ -1,0 +1,14 @@
+{
+  "comment": "Imitates the story shape of the recorded 2026-11-11-item-50449748.json with dead set to true, as the Hacker News API documents dead items",
+  "body": {
+    "by": "js2",
+    "dead": true,
+    "descendants": 37,
+    "id": 50449748,
+    "score": 99,
+    "time": 1794371337,
+    "title": "Protecting SSH Keys with macOS Secure Enclave",
+    "type": "story",
+    "url": "https://gatezh.com/posts/macos-secure-enclave-ssh-keys/"
+  }
+}

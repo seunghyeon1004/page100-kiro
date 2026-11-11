@@ -1,0 +1,4 @@
+{
+  "comment": "Imitates a featured day that carries none of news, mostread and tfa, only keys this service does not read (compare image and onthisday in 2026-11-11-featured-yesterday.json)",
+  "body": { "image": {}, "onthisday": [] }
+}

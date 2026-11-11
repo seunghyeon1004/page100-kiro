@@ -1,0 +1,13 @@
+{
+  "comment": "Imitates 2026-11-11-series.json (a series body) with its dates listed newest first, to check that points are sorted by date ascending",
+  "body": {
+    "amount": 1,
+    "base": "USD",
+    "start_date": "2026-11-09",
+    "end_date": "2026-11-10",
+    "rates": {
+      "2026-11-10": { "CNY": 6.6703, "EUR": 0.89174, "GBP": 0.74501, "INR": 93.93, "JPY": 158.18, "KRW": 1339 },
+      "2026-11-09": { "CNY": 6.6928, "EUR": 0.89437, "GBP": 0.75555, "INR": 95.78, "JPY": 158.6, "KRW": 1333.09 }
+    }
+  }
+}

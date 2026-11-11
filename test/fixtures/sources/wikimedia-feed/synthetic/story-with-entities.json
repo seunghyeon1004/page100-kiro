@@ -1,0 +1,17 @@
+{
+  "comment": "Imitates a news item of 2026-11-11-featured-today.json (story markup with a leading comment, tags, a doubled space and links with article summaries), adding the entities &amp; &lt; &gt; &quot; &#39; &#x27; that the Wikimedia and Hacker News fixtures show",
+  "body": {
+    "news": [
+      {
+        "story": "<!--Nov 8-->Fish &amp; chips: <b id=\"x\"><a href=\"./A\">a &lt;b&gt;</a></b>  &quot;quoted&quot; &#39;one&#39; &#x27;two&#x27;.",
+        "links": [
+          {
+            "titles": { "normalized": "A" },
+            "extract": "A is a letter.",
+            "content_urls": { "desktop": { "page": "https://en.wikipedia.org/wiki/A" } }
+          }
+        ]
+      }
+    ]
+  }
+}

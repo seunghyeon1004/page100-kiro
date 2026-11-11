@@ -1,0 +1,8 @@
+{
+  "url": "https://api.frankfurter.dev/v1/latest?base=USD",
+  "fetchedAt": "2026-11-11T07:16:42.304Z",
+  "status": 200,
+  "query": {
+    "base": "USD"
+  }
+}

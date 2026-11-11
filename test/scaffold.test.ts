@@ -27,7 +27,7 @@ function readJson(relativePath: string): JsonObject {
 
 const EXACT_VERSION = /^\d+\.\d+\.\d+$/;
 
-describe("package.json (requirement 1.1 to 1.5)", () => {
+describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
   const pkg = readJson("package.json");
 
   it("has the fixed fields and engines", () => {
@@ -49,8 +49,9 @@ describe("package.json (requirement 1.1 to 1.5)", () => {
     });
   });
 
-  it("lists exactly the seven dev dependencies at the pinned versions", () => {
+  it("lists exactly the eight dev dependencies at the pinned versions", () => {
     expect(pkg.devDependencies).toEqual({
+      tsx: "4.23.15",
       typescript: "6.0.3",
       vitest: "4.1.12",
       "fast-check": "4.10.2",
@@ -61,15 +62,18 @@ describe("package.json (requirement 1.1 to 1.5)", () => {
     });
   });
 
-  it("has no runtime, optional or peer dependency field", () => {
-    expect(pkg.dependencies).toBeUndefined();
+  it("lists exactly zod as the runtime dependency, and no optional or peer field", () => {
+    expect(pkg.dependencies).toEqual({ zod: "4.6.7" });
     expect(pkg.optionalDependencies).toBeUndefined();
     expect(pkg.peerDependencies).toBeUndefined();
   });
 
-  it("writes every dev dependency version as an exact x.y.z", () => {
-    const versions = Object.values(pkg.devDependencies as JsonObject);
-    expect(versions).toHaveLength(7);
+  it("writes every dependency version as an exact x.y.z", () => {
+    const versions = [
+      ...Object.values(pkg.devDependencies as JsonObject),
+      ...Object.values(pkg.dependencies as JsonObject),
+    ];
+    expect(versions).toHaveLength(9);
     for (const version of versions) {
       expect(typeof version === "string" && EXACT_VERSION.test(version)).toBe(true);
     }
@@ -98,8 +102,8 @@ describe("tsconfig files (requirement 1.6 and 1.7)", () => {
     });
   });
 
-  it("includes src, test and vitest.config.ts", () => {
-    expect(tsconfig.include).toEqual(["src", "test", "vitest.config.ts"]);
+  it("includes src, test, scripts and vitest.config.ts", () => {
+    expect(tsconfig.include).toEqual(["src", "test", "scripts", "vitest.config.ts"]);
   });
 
   it("builds only src into dist with rootDir src", () => {
@@ -133,6 +137,8 @@ describe("prettier files (requirement 1.9)", () => {
       ".kiro/",
       "docs/",
       "test/fixtures/",
+      "src/sources/snapshot/",
+      "public/fonts/",
     ]);
   });
 

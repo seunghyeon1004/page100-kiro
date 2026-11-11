@@ -1,0 +1,140 @@
+# Kiro CLI 3.2.0, 2026-11-11. Unedited output; only the home directory prefix is replaced with ~.
+$ kiro-cli chat --v3 --trust-workspace --no-interactive --trust-all-tools --model claude-opus-5.5 --effort high  "<prompt>"
+
+## Prompt
+Start a spec session for the feature `rule-compilers`. Read .kiro/steering/kiro-workflow.md and .kiro/steering/editorial.md, and .kiro/specs/pages-and-sources/design.md for the page model and the normalised source types (another session is implementing that spec right now: read its design, do not touch src/ or test/, and do not run npm scripts). Write only .kiro/specs/rule-compilers/requirements.md, design.md and tasks.md, in the grid-core format. Do not implement or tick. Keep them tight: requirements about 240 lines, design about 300, tasks about 90. Cite steering instead of restating it.
+
+Scope: the deterministic compilers that turn a Snapshot into every in-service page, with no model and no network.
+
+Shared pieces (src/compilers):
+- format.ts: the formatters in editorial.md's table, and nothing formats a number anywhere else.
+- fit-text.ts: wrap and truncate exactly as editorial.md's "Fitting and truncation" says, including the no-dangling-ellipsis-on-a-number rule.
+- content-builder.ts: builds the 20 content rows from markup rows and typed helpers and collects the AltBlocks at the same time, so grid and text alternative cannot drift. It returns `ValidContent` through validateContentRows or the violations; it never truncates silently.
+- mosaic-canvas.ts: a pixel canvas (2 pixels wide and 3 high per cell) that turns set pixels into mosaic cells; on top of it a bar/line chart helper, six small weather symbols (clear, cloud, rain, snow, storm, fog) chosen from WMO weather codes, a moon disc for a given illuminated fraction and waxing/waning flag, and block lettering for the index title (a pixel font drawn in mosaics; digits and A-Z only).
+- moon.ts: phase, illuminated fraction, next full and next new moon from a time, by a published algorithm cited in the design, with known dates as tests.
+
+One compiler per page or page family, each a pure function `(data, now) => CompiledPage` (or a "no data yet" page when its source value is missing, which is still a valid page and says so plainly):
+100 index (block-letter title, the sections with their page numbers); 110 news index and 111-118 story pages; 120 most read; 200 weather now (four subpages by region, a table with a weather symbol per city); 201 five-day outlook (one subpage per city, with a mosaic temperature chart of highs and lows); 300 rates against USD with change on the day; 301 thirty-day trend chart, one subpage per currency; 400/401/402 Hacker News lists (rank, title wrapped to at most two rows, points and comment count); 500 on this day events and 501 births and deaths; 550 quiz (five questions from on-this-day events: the event without its year, the year concealed; the choice of events is deterministic from the date); 600 earthquakes table; 601 moon; 610 launches; 700 featured article; 802 service status from a `ServiceStatus` value this spec defines as an input (per-page compile time and editor, model calls used and the cap, drafts accepted and rejected today) and the server will supply; 800, 801, 899 from pages/<n>.page files through parseContent, with their text alternative derived from the rows by one documented rule. The three .page files themselves are written later by a Kiro agent: this spec ships minimal valid placeholders and a test that every file in pages/ compiles.
+
+Editor seam, needed by the next spec (ai-editor): for the pages whose editor is `ai` (110, 111-118, 500, 501, 700), split the compiler into three exported parts: `editorialInput(data)` (the source text and the limits: row count and width per slot), `rulesDraft(input)` (plain text rows produced by fit-text), and `assemble(data, rows, now)` (lays the rows out with colours and builds the page). The rule-based page is `assemble(data, rulesDraft(editorialInput(data)), now)`. assemble rejects rows that break the limits; it never trims them.
+
+Top level: `compileAll(snapshot, status, now)` returns every in-service page, never throws, and reports per page whether it compiled, fell back to "no data yet", or failed (a failed page is left out and reported, never published invalid). scripts/grid-check.ts and the `grid:check` npm script: compile everything from the boot snapshot, validate every screen through the frame builder, run the alt agreement checker, and check every pages/*.page file; non-zero exit with row and column on any problem.
+
+Correctness properties wanted at least: (1) for all generated source data, including hostile values (very long words and names, empty lists, negative and extreme numbers, text that does not fold), compileAll never throws and every page it returns frames to a ValidPage; (2) alt agreement holds for every compiled subpage; (3) determinism: same snapshot, status and now give deeply equal pages; (4) fit-text never exceeds the width or row count, never cuts inside a word, never ends with an ellipsis after a digit; (5) every number shown on a page is produced by format.ts from a field of the data (check by tokenising the grid's digits against the formatted inputs for the numeric pages); (6) mosaic canvas: pixels set equal pixels decoded from the cells; (7) moon fraction is within 0..1 and the next full moon is after now for any time in 1970-2100; (8) the quiz never shows a year unconcealed.
+
+End by printing line counts and at most three open questions.
+
+## Output
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=7
+[tool] List Directory
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] List spec and steering files with line counts
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Check the existing rule-compilers evidence transcript
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Inspect current source tree and key exports
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] Count spec lines, properties and criteria; check repo changes
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+I've written the three `rule-compilers` spec files in the grid-core format. Nothing is implemented or ticked. I only created files under `.kiro/specs/rule-compilers/`: I didn't touch `src/` or `test/` and didn't run any npm scripts.
+
+| File | Lines | Target |
+|---|---|---|
+| `requirements.md` | 237 | about 240 |
+| `design.md` | 278 | about 300 |
+| `tasks.md` | 67 | about 90 |
+
+- **Requirements:** 20 requirements with 76 EARS criteria. They cite `editorial.md`, `grid-rules.md`, `frontend.md` and the pages-and-sources design rather than restating them.
+- **Departures section:** four changes to steering or the request, listed with reasons. Three of them are the open questions below. The fourth is adding `grid:check` to the exact scripts list fixed by grid-core 1.2 and pages-and-sources 1.4.
+- **Design:** covers the formatter table with ranges and maximum widths, the fitting algorithm, the builder API and a row-and-column layout for every page. It also gives the quiz's seeded selection rule and the per-page table of allowed numbers that Property 5 checks against.
+- **Moon:** the design cites Meeus, *Astronomical Algorithms* (2nd ed., 1998), chapters 47–49. The known-date tests use UT times from Espenak's [Phases of the Moon: 2001 to 2100](https://astropixels.com/ephemeris/phasescat/phases2001.html), which I read today. For example, from 2026-11-11 the next full moon is 2026-11-24 14:53 and the next new moon is 2026-12-09 00:52, with a 5-minute tolerance.
+- **Properties:** 12 in total. They are your eight plus four more: the rules draft always passes `assemble` while an over-width row is rejected with the exact message; formatter widths and `n/a`; the content builder against an independent check; and the static-page alt rule.
+- **Tasks:** these wait on pages-and-sources tasks 2–6 and 13–14, which the other session is still doing. One assumption needs checking: if `CITIES` has no display name for each city, the implementing session should stop and ask.
+
+**Open questions**
+
+1. **`compileAll` takes a fourth argument.** I made it `compileAll(snapshot, status, now, pageFiles)` instead of three arguments, because compilers read no files. The server and `grid:check` read `pages/*.page` and pass the text in. Is that acceptable?
+2. **Out-of-range values show as `n/a`.** `editorial.md` uses `n/a` only for missing values. I also use it for values outside a plausible range (for example a temperature outside -100 to 100°C), so every column has a fixed maximum width and bad data can't push a page past 40 cells. Do you agree, and are the ranges in the design's formatter table right?
+3. **Page 300 shows only the six series currencies** (EUR, GBP, JPY, KRW, CNY, INR), because change on the day needs the series data. Adding more currencies would mean extra rows whose change always reads `n/a`. Six, or more?
+
+## Exit code 0. Account credits before 2182.60, after 2422.46 (shared account: includes any parallel session).

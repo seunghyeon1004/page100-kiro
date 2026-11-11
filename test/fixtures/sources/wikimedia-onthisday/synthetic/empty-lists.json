@@ -1,0 +1,4 @@
+{
+  "comment": "Imitates 2026-11-11-onthisday.json with the three lists events, births and deaths empty (selected and holidays kept as the real response has them)",
+  "body": { "events": [], "births": [], "deaths": [], "selected": [], "holidays": [] }
+}

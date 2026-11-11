@@ -1,0 +1,4 @@
+{
+  "comment": "Imitates a deleted Hacker News item as the API documents it: an object with id, deleted true, time and type but no title or by (not shown by the recorded 2026-11-11-item-*.json files)",
+  "body": { "id": 50449748, "deleted": true, "time": 1794371337, "type": "story" }
+}

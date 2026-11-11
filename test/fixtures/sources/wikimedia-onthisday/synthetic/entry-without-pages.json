@@ -1,0 +1,8 @@
+{
+  "comment": "Imitates an events entry of 2026-11-11-onthisday.json ({ text, pages, year }) whose pages list is empty, with a BC year as a negative number",
+  "body": {
+    "events": [{ "text": "An event with no linked article.", "pages": [], "year": -44 }],
+    "births": [],
+    "deaths": []
+  }
+}

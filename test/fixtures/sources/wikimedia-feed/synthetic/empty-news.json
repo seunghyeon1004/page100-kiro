@@ -1,0 +1,4 @@
+{
+  "comment": "Imitates 2026-11-11-featured-today.json (a day that carries news) with news as an empty list and no mostread or tfa key",
+  "body": { "news": [] }
+}

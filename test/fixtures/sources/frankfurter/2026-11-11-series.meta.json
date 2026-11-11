@@ -1,0 +1,9 @@
+{
+  "url": "https://api.frankfurter.dev/v1/2026-10-12..?base=USD&symbols=EUR,GBP,JPY,KRW,CNY,INR",
+  "fetchedAt": "2026-11-11T07:16:51.964Z",
+  "status": 200,
+  "query": {
+    "base": "USD",
+    "symbols": "EUR,GBP,JPY,KRW,CNY,INR"
+  }
+}
