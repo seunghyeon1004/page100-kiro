@@ -23,5 +23,6 @@ Every `.txt` file here is the output of one real Kiro CLI 3.2.0 run in this repo
 | `18-page-author-agent-mcp.txt` | auto, V2 | The same agent with the MCP tools connected: validates, previews and improves each page. |
 | `19-compiler-corrections.txt` | auto | Three corrections with spec amendments. Kiro shows the owner's diagnosis of one of them was wrong. |
 | `20-task-auditor-agent.txt` | haiku 5.5 | The `task-auditor` agent re-runs every Verify command of two specs and reports stale counts honestly. |
+| `21-grid-reviewer-agent.txt` | auto, V2 | The `grid-reviewer` agent reviews the three hand-made changes and renders pages 500, 501 and 601 through MCP. Three real findings in the scheduler fix, since fixed. |
 
 The credit figures at the end of each file are the whole account's meter before and after the run. Other sessions were using the same account, so a difference is an upper bound for that run, not its cost.

@@ -1,0 +1,104 @@
+# Kiro CLI 3.2.0 (V2 engine, so the workspace MCP server is connected), 2026-11-11. Unedited output; only the home directory prefix is replaced with ~.
+$ kiro-cli chat --v2 --agent grid-reviewer --no-interactive --trust-all-tools --model auto "<prompt>"
+
+## Prompt
+Review the last four commits (run `git diff HEAD~4 --stat` and `git diff HEAD~4 -- src public pages`, read only) against .kiro/steering/grid-rules.md, editorial.md and frontend.md. They contain three changes made by hand outside a spec session: src/sources/wikimedia-onthisday.ts (which 40 entries are kept), public/app.css (the text alternative's table), and src/server/scheduler.ts (publishing dropped edition pages from the draft cache). For each: does it break any steering rule or invariant, is there a case it gets wrong, and is it covered by a test? Also call @page100/render_page for pages 500, 501 and 601 and check the rendered rows against editorial.md (fitting, truncation, number formats). List findings with file and line, most serious first, and say plainly when you find nothing. Change no file.
+
+## Output
+I'll start with the diffs, the two steering files I haven't seen, and the three page renders.
+[tool] Running: git diff HEAD~4 --stat
+[tool] Running: git diff HEAD~4 -- src public pages
+[tool] Reading editorial.md:1, frontend.md:1
+[tool] Running: @page100/render_page
+[tool] Running: @page100/render_page
+[tool] Running: @page100/render_page
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+The four-commit diff has no change to `src/sources/wikimedia-onthisday.ts`. I'll check the working tree and staged changes, and read the tests and the requirement edit.
+[tool] Running: git status --short; echo ---; git diff --stat; echo ---; git diff --cached --stat
+[tool] Running: git diff HEAD~4 -- test .kiro/specs
+[tool] Reading wikimedia-onthisday.ts:1
+[tool] Reading scheduler.ts:201-310
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+The `wikimedia-onthisday.ts` change isn't in this range, so I'll look for it in older commits and in the tests. I also need the CSS context and the text-view class names, and I'll run `grid:check`.
+[tool] Running: for n in 6 8 12 20; do echo "== HEAD~$n..HEAD~4"; git diff --stat HEAD~$n..HEAD~4 -- src/sources/wikimedia-onthisday.ts test/sources 2>&1 | tail -5; done
+[tool] Running: grep -rn "MAX_DAY_ENTRIES\|selected" test/sources test/compilers --include=*.ts | head -30; echo ---; grep -rn "12\.7" .kiro/specs | head; echo ---; grep -rn "\"text\"\|\.text\b\|classList...
+[tool] Running: grep -n "\.alt\|\.text\|focus\|overflow" public/app.css | head -60
+[tool] Running: npm run -s grid:check 2>&1 | tail -15
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] Reading app.css:325-384, app.css:415-436, wikimedia-onthisday.test.ts:51-120
+[tool] Running: for n in 5 6; do echo "HEAD~$n..HEAD~$((n-1))"; git diff --stat HEAD~$n..HEAD~$((n-1)) -- src/sources/wikimedia-onthisday.ts; done
+[tool] status: Completed
+[tool] status: Completed
+The on-this-day change is in the fifth commit back (`HEAD~5..HEAD~4`), so `git diff HEAD~4` leaves it out. I'll read that diff.
+[tool] Running: git diff HEAD~5..HEAD~4 -- src/sources/wikimedia-onthisday.ts test/sources/wikimedia-onthisday.test.ts
+[tool] status: Completed
+I found no steering-rule violation in any of the three changes, but there are several weaker problems. Most serious first, each marked as verified or not.
+
+The on-this-day change is not in your range. `git diff HEAD~4` leaves out the fifth commit back, and `src/sources/wikimedia-onthisday.ts` changed in `HEAD~5..HEAD~4`. I reviewed it there, so use `HEAD~5` if you want it in one diff.
+
+## Findings
+
+```
+src/server/scheduler.ts:281  editorial/6.5  The rescue log counts every AI page the reuse pass returns, not the dropped ones. `again.pages` holds all AI pages, including those just published from `fresh`. So "N dropped pages published from cached drafts" can read 12 when 10 were dropped. Read from the code; I didn't run it.
+src/server/scheduler.ts:272-282  invariant 2/6.3  The reuse pass is not inside the existing `try` in a way that protects the edition summary. If `run(..., "reuse")` throws, the `catch` logs "edition: failed". That skips `publish802` and the summary line, even though the model calls were spent and the main pages were published. Read from the code.
+src/server/scheduler.ts:272-282  6.3  Rescued pages skip the `fetchedAt` check that 6.3 applies to the main edition. They are built from `current` at call time, so a source refresh during the awaited reuse pass could publish older data. The window is small. `rescued.failed` is also never logged.
+test/server/scheduler.test.ts:503-507  coverage  One happy-path test for 6.3a. Not covered: the refreshed text actually differs (the page must stay dropped), a throw in the reuse pass, and the log count.
+```
+
+```
+src/compilers (page 500, rows 4-19)  editorial/Voice  On-this-day events should be in the past tense. The rendered rows say "celebrates", "is formed", "assumes", "is given" and "kills". These are the source's historical present. I can't tell from the render whether 500 was rule-based or AI-edited. If rule-based, it passes the source text through unchanged.
+```
+
+```
+public/app.css:369-372  frontend.md/Text alternative  `display: block` on a `<table>` can make some screen readers drop the table role in the visible text view. That is where frontend.md requires `<th scope>` tables. Browser behaviour: I did not test it.
+public/app.css:340-356  frontend.md/Layout  `.alt:focus-within` also reveals the alternative (for example, tabbing into a link in it). In that case the `.text .alt table` rule doesn't apply, so a wide table has no overflow container. `overflow-wrap: anywhere` probably prevents horizontal scroll. I didn't verify this at 320 px.
+test/e2e/a11y.spec.ts:76-94  coverage  The new test checks only the first Tab stop on /200, /300 and /600. It doesn't cover the text view, the 320 px width, or the table's accessible role.
+```
+
+```
+test/sources/wikimedia-onthisday.test.ts (recorded-fixture test)  tech.md rule 3  The assertion went from exactly 40 events to `>= 40`. The spec amendment (12.7a) allows extra `selected` entries, so a looser check is justified. But the exact count is computable (40 plus the selected entries outside the spread). `>= 40` would also pass if the spread kept too many.
+.kiro/specs/pages-and-sources/requirements.md:185, .kiro/specs/rule-compilers/requirements.md:29  spec consistency  Both still say "the first 40 entries". 12.7a supersedes this, but the old wording remains in place.
+```
+
+## Per change
+
+- **`wikimedia-onthisday.ts:61-68` (which 40 entries are kept):** No rule or invariant is broken. It is deterministic and total, and the output is a subsequence of the delivered order.
+  - For n > 40 the spread step is above 1, so the 40 rounded positions are distinct. For n ≤ 40 everything is kept. The first and last entries are always kept.
+  - Entries from `selected` are matched on year and text, so a duplicate with the same year and text would also be kept. That is harmless.
+  - It is well covered: the recorded fixture, both ends, order, the selected-entry case, and the 41-entry boundary.
+  - There is no property test that n > 40 always keeps exactly 40.
+- **`public/app.css:365-372`:** It fixes the bug the e2e test names. The hidden table is no longer a scroll container, so it is no longer a Tab stop. The residual risks are listed above.
+- **`scheduler.ts:272-282`:** It matches 6.3a as written, and "publish every AI page it returns" is what the code does. The problems are the log count, the error path, and thin tests.
+
+## Rendered pages (500, 501, 601)
+
+I checked all 20 content rows of each against editorial.md.
+
+- **Fitting:** Every row is within 40 cells, wrapped at spaces only, with no hyphen inserted. The list ends on whole items.
+- **Truncation:** The five cut items on 500 end in `...` at a word boundary. None ends on a digit or a unit. "ships and..." ends on a conjunction, which the rules don't forbid.
+- **Numbers:** Years are plain digits with no comma. "38 people" and "48" come from data. 601 shows `4% illuminated` as an integer percentage. The moon times use `Ddd DD Mon HH:MM UTC`, and "09 Dec" is zero-padded like the header.
+- **Row 22:** Each page shows `HH:MM UTC`.
+- **Small notes:**
+  - "Events on 11 Nov" and "Born on 11 Nov" use a `DD Mon` date, which isn't in the editorial table.
+  - "Pilsudski" is correct under the fixed Ł→L folding.
+  - On 601, I couldn't check mosaic background colours because the preview prints only foreground letters.
+
+## Commands run
+
+- `git diff HEAD~4 --stat`, `git diff HEAD~4 -- src public pages`, `git diff HEAD~4 -- test .kiro/specs`, `git diff HEAD~5..HEAD~4` (on-this-day files), and `git status --short`.
+- `npm run -s grid:check`: "30 pages, 43 screens, 0 problems".
+- `render_page` for 500, 501 and 601.
+
+I did not run `npm test`, the e2e suite, `npm run payload` or lint, because this review is limited to `grid:check`. So the new tests are unrun and the 6 KiB CSS budget is unmeasured. Of the changes in your range, `git status` shows only one untracked file, `docs/kiro-evidence/21-grid-reviewer-agent.txt`. I changed no files.
+## Exit code 0

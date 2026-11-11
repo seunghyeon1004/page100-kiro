@@ -260,25 +260,38 @@ export function createScheduler(deps: SchedulerDeps): Scheduler {
       store.setEditorStatus(result.status);
       const now = clock();
       const fresh: CompiledPage[] = [];
-      let dropped = 0;
+      const droppedNumbers = new Set<number>();
       for (const page of result.pages) {
         const source = wikipediaSourceOf(findPage(page.number)?.source);
         const unchanged =
           source !== undefined && fetchedAt.get(source) === current.sources[source].fetchedAt;
         if (unchanged) fresh.push(page);
-        else dropped += 1;
+        else droppedNumbers.add(page.number);
       }
+      const dropped = droppedNumbers.size;
       const counts = publishPages(fresh, now);
       // A page dropped because its source was refreshed during the edition is not lost when the
       // refreshed text is the same: a reuse pass on the current data finds its accepted draft in
-      // the cache and publishes it, at no model call (requirement 6.3a, added by hand).
+      // the cache and publishes it, at no model call (requirement 6.3a, added by hand). Only the
+      // dropped pages are republished, and a failure here never hides the edition's own summary.
       if (dropped > 0) {
-        const again = await run(current, store.editorStatus() ?? emptyEditorStatus(), now, "reuse");
-        const rescued = publishPages(
-          again.pages.filter((page) => page.editor === "ai"),
-          now,
-        );
-        log(`edition: ${String(rescued.published)} dropped pages published from cached drafts`);
+        try {
+          const again = await run(
+            current,
+            store.editorStatus() ?? emptyEditorStatus(),
+            now,
+            "reuse",
+          );
+          const rescued = publishPages(
+            again.pages.filter((page) => page.editor === "ai" && droppedNumbers.has(page.number)),
+            now,
+          );
+          log(
+            `edition: ${String(rescued.published)} dropped pages published from cached drafts, ${String(rescued.failed)} failed`,
+          );
+        } catch {
+          log("edition: reuse pass for dropped pages failed");
+        }
       }
       publish802(now);
       const failed = result.outcomes.filter((o) => "outcome" in o).length + counts.failed;

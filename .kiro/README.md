@@ -1,6 +1,6 @@
 # How Page 100 was built with Kiro
 
-Everything in `src/`, `test/`, `public/`, `tools/` and `scripts/` was written by Kiro CLI 3.2.0 from the specs in this directory, in 20 recorded sessions. The owner wrote the product brief, made the decisions, read every diff, re-ran every check, and did a short list of things by hand, which is at the end. Every session's transcript is in [`docs/kiro-evidence/`](../docs/kiro-evidence/README.md).
+Everything in `src/`, `test/`, `public/`, `tools/` and `scripts/` was written by Kiro CLI 3.2.0 from the specs in this directory, in 21 recorded sessions. The owner wrote the product brief, made the decisions, read every diff, re-ran every check, and did a short list of things by hand, which is at the end. Every session's transcript is in [`docs/kiro-evidence/`](../docs/kiro-evidence/README.md).
 
 ## The strategy
 
@@ -65,7 +65,7 @@ Created by Kiro's `custom-agent-creator` sub-agent, validated with `kiro-cli age
 | --- | --- | --- |
 | `page-author` | Writes `pages/*.page`; may write only under `pages/`; validates through MCP | Sessions 17 and 18: the four hand-written pages |
 | `task-auditor` | Re-runs the Verify command of every ticked task and reports which ticks still hold | Session 20: audited `grid-core` and `ai-editor` |
-| `grid-reviewer` | Read-only review of a diff against the grid and editorial rules | Not yet run on its own; the `/fit` hook does the same review in every session |
+| `grid-reviewer` | Read-only review of a diff against the grid and editorial rules | Session 21: reviewed the three changes made by hand. It found that the scheduler fix miscounted its log line, could hide the edition summary if the reuse pass threw, and republished more pages than it had dropped. All three were fixed. |
 
 The auditor's report is worth reading as it is (`20-task-auditor-agent.txt`). Every property matched its design. It marked 16 Verify results "not proven", for three reasons: test counts quoted in ticks had grown as later specs added tests; lint failed on a README the owner had just added and not yet formatted; and it would not run `npm run build` because it was told to change no file. No task was found ticked without working code.
 
