@@ -73,3 +73,22 @@ test("page changes never move focus", async ({ page }) => {
     ),
   ).toBe("h");
 });
+
+// Found by hand: the hidden text alternative's table was a 1 px scroll container, which Chromium
+// makes a Tab stop, so the first Tab on any page with a table revealed the alternative and
+// scrolled the screen away.
+for (const path of ["/200", "/300", "/600"]) {
+  test(`${path}: the first Tab stop is a control and the page does not scroll`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    await page.keyboard.press("Tab");
+    const first = await page.evaluate<{ tag: string; inAlt: boolean; scrollY: number }>(`(() => {
+      const el = document.activeElement;
+      return { tag: el ? el.tagName : "", inAlt: !!(el && el.closest(".alt")), scrollY: window.scrollY };
+    })()`);
+    expect(first.tag).toBe("A");
+    expect(first.inAlt).toBe(false);
+    expect(first.scrollY).toBe(0);
+  });
+}

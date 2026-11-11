@@ -14,7 +14,7 @@ Built for Kiroween 2026, category **Resurrection**. Built with Kiro: see [`.kiro
 
 A Page 100 page is a few kilobytes, reads in ten seconds, and never asks you for anything.
 
-- **Small.** The first visit downloads 11,512 bytes in total: HTML, CSS, script and font, brotli-compressed. Every further page is about 1 KB. These numbers are measured by `npm run payload` and a test fails if a budget is exceeded.
+- **Small.** The first visit downloads 11,515 bytes in total: HTML, CSS, script and font, brotli-compressed. Every further page is about 1 KB. These numbers are measured by `npm run payload` and a test fails if a budget is exceeded.
 - **Works without JavaScript.** Every page is server-rendered HTML with links and a small form. JavaScript only adds the remote-control feel.
 - **Works in a terminal.** `curl https://<host>/200` prints the page in colour. `/200.txt` is plain text and `/200.json` is data.
 - **Works with a screen reader.** The block-graphics grid is hidden from assistive technology. Each page carries a real text version (headings, lists, tables with header cells) built from the same data, and the T key shows it to everyone.
@@ -110,7 +110,7 @@ Deploy: `render.yaml` and the `Dockerfile` target Render's free plan. `npx tsx s
 | `npm run typecheck`, `npm run lint` | TypeScript strict, ESLint strict type-checked, Prettier                                                                                            |
 | `npm run grid:check`                | Every page compiled from the snapshot and every file in `pages/` is a valid 40 by 24 screen with a matching text alternative: 30 pages, 43 screens |
 | `npm run payload`                   | The byte budgets                                                                                                                                   |
-| `npm run e2e`                       | 41 browser tests in headless Chromium: keys, phone keypad, no-JavaScript mode, rotation and hold, reveal, focus, no request leaves the origin      |
+| `npm run e2e`                       | 44 browser tests in headless Chromium: keys, phone keypad, no-JavaScript mode, rotation and hold, reveal, focus, no request leaves the origin      |
 
 ## Credits and licences
 

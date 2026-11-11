@@ -87,6 +87,7 @@ The auditor's report is worth reading as it is (`20-task-auditor-agent.txt`). Ev
 - One fix to a Kiro-written property test (`test/server/render-html.property.test.ts`): its "raw text must not appear" assertion was unsound when one generated string was the escaped form of another. The assertion now excludes exactly that case.
 - The on-this-day normaliser's choice of which 40 entries to keep (`12.7a` in the pages-and-sources spec), its two tests, and re-recording three inline snapshots after looking at the new pages.
 - Replacing the placeholder test for `pages/` with content tests once the real pages existed.
+- One CSS fix and its three browser tests, found by driving the page by hand in headless Chromium: the hidden text alternative's table was a scroll container, which Chromium makes a Tab stop, so the first Tab revealed the alternative and scrolled the screen away. Kiro's 41 browser tests had not caught it.
 - `README.md`, `LICENSE`, `.gitignore`, commits and pushes.
 
 ## Not verified
