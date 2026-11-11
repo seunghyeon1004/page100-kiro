@@ -178,10 +178,15 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
     }
   });
 
-  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths, and in test/server also node:zlib and node:http, and in test/e2e also @playwright/test (server-and-viewer 17.1)", () => {
+  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths, and in test/server also node:zlib and node:http, and in test/e2e also @playwright/test (server-and-viewer 17.1), and in test/mcp also the MCP SDK client, its in-memory transport and node:child_process", () => {
     const allowed = new Set(["vitest", "fast-check", "node:fs", "node:path", "node:url"]);
     // The server tests decode compressed bodies and talk to the app on 127.0.0.1 (design.md, "Test plan").
     const serverOnly = new Set(["node:zlib", "node:http"]);
+    const mcpOnly = new Set([
+      "@modelcontextprotocol/sdk/client/index.js",
+      "@modelcontextprotocol/sdk/inMemory.js",
+      "node:child_process",
+    ]);
     for (const file of tsFiles("test")) {
       for (const specifier of specifiers(read(file))) {
         const ok =
@@ -189,7 +194,9 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
           allowed.has(specifier) ||
           (file.startsWith("test/server/") && serverOnly.has(specifier)) ||
           // Playwright is for test/e2e only (tech.md).
-          (file.startsWith("test/e2e/") && specifier === "@playwright/test");
+          (file.startsWith("test/e2e/") && specifier === "@playwright/test") ||
+          // The dev MCP server is tested through the MCP SDK client and, once, as a child process.
+          (file.startsWith("test/mcp/") && mcpOnly.has(specifier));
         expect(ok, `${file} imports ${specifier}`).toBe(true);
       }
     }

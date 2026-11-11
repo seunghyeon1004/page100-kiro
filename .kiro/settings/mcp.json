@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "page100": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "tools/mcp/server.ts"
+      ],
+      "env": {}
+    }
+  }
+}

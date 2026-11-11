@@ -20,6 +20,7 @@
     "payload": "tsx scripts/payload.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@playwright/test": "1.65.0",
     "@types/node": "20.19.43",
     "eslint": "10.14.0",

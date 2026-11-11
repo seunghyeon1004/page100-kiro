@@ -54,8 +54,9 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
     });
   });
 
-  it("lists exactly the nine dev dependencies at the pinned versions (server-and-viewer 1.2)", () => {
+  it("lists exactly the ten dev dependencies at the pinned versions (server-and-viewer 1.2)", () => {
     expect(pkg.devDependencies).toEqual({
+      "@modelcontextprotocol/sdk": "1.32.2",
       "@playwright/test": "1.65.0",
       tsx: "4.23.15",
       typescript: "6.0.3",
@@ -79,7 +80,7 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
       ...Object.values(pkg.devDependencies as JsonObject),
       ...Object.values(pkg.dependencies as JsonObject),
     ];
-    expect(versions).toHaveLength(11);
+    expect(versions).toHaveLength(12);
     for (const version of versions) {
       expect(typeof version === "string" && EXACT_VERSION.test(version)).toBe(true);
     }
@@ -108,11 +109,12 @@ describe("tsconfig files (requirement 1.6 and 1.7)", () => {
     });
   });
 
-  it("includes src, test, scripts, vitest.config.ts and playwright.config.ts", () => {
+  it("includes src, test, scripts, tools, vitest.config.ts and playwright.config.ts", () => {
     expect(tsconfig.include).toEqual([
       "src",
       "test",
       "scripts",
+      "tools",
       "vitest.config.ts",
       "playwright.config.ts",
     ]);
