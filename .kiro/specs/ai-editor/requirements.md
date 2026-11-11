@@ -12,21 +12,30 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 - **Input key**: SHA-256 of an EditorialInput's canonical text (design, "Cache").
 - **Publish**: `assemble`, then `checkCompiledPage` and `buildScreen` for every subpage with `stale` false and true (the checks `compileAll` applies, rule-compilers 18.2).
 
+## Owner answers (2026-11-11)
+
+1. **Offline mode.** `EDITOR_CLIENT=fixtures` is the switch. The fixtures stay in `test/fixtures/editor/` and are not part of the Docker image. WHILE `fixtures` is selected and the server finds no fixture files, the editor is off (`createEditorClient` returns `null`).
+2. **Settings.** This spec does not create `src/server/config.ts`. `src/editor` takes its settings as an argument (`EditorSettings`); the server spec reads the environment.
+3. **Names.** A name check is added (requirement 7.10): every capitalised word in a draft that does not start a sentence or a row must appear in the source text, compared case-insensitively after folding; the allowed abbreviations of `editorial.md` pass. Violation: `name "X" not in input`. The check rejects some honest rewording; the rules fallback covers that.
+4. **Network and secrets.** `npm install` of `@anthropic-ai/sdk` is allowed (npm network use only). Nothing else uses the network: the real API is never called, no `.env` or secrets file is read, no environment variable is printed. Task 14 (real recordings) stays the owner's and stays unticked. Every test that would need recordings uses a scripted `EditorClient`; one clearly named test file, `test/editor/recorded-fixtures.test.ts`, is skipped with a reason while `test/fixtures/editor/` has no fixture files.
+
 ## Departures
 
 1. **Imports.** `structure.md` lets `src/editor` import `src/grid`, `src/markup` and `src/sources` types. It also imports `src/compilers` (the seam functions) and `src/pages` (`REGISTRY`, `checkCompiledPage`, `buildScreen`), as rule-compilers Departure 1 did for compilers.
-2. **Files outside `src/editor`.** This spec writes `src/server/config.ts` with the editor variables only (`tech.md` puts every environment read there; the server spec adds `PORT`), `scripts/record-editor-fixtures.ts` and `test/fixtures/editor/`.
-3. **New variables.** `tech.md` lists four variables. This spec adds `EDITOR_MAX_CALLS_PER_BOOT` (default 30, decided by the owner) and `EDITOR_CLIENT` (`auto` or `fixtures`, for the offline demo mode), and sets `MAX_MODEL_CALLS_PER_DAY` to 60. `tech.md` needs the owner's edit to list them.
+2. **Files outside `src/editor`.** This spec writes `scripts/record-editor-fixtures.ts` and its helpers, and reads `test/fixtures/editor/` in tests. It writes no `src/server` file (owner answer 2).
+3. **New variables.** `tech.md` lists four variables. The server spec will read them and pass `EditorSettings`; it also reads `EDITOR_MAX_CALLS_PER_BOOT` (default 30, decided by the owner) and `EDITOR_CLIENT` (`auto` or `fixtures`, the offline mode), and sets `MAX_MODEL_CALLS_PER_DAY` to 60. `tech.md` needs the owner's edit to list them.
 4. **Developer news.** `product.md` says the AI may shorten titles on 400 to 402. The rule-compilers spec treats those titles as names that are never shortened, and the owner's AI page list leaves them out. They stay rules-only.
 5. **Scaffold lists.** pages-and-sources 1.1 fixes `dependencies` to `zod` only. This spec adds `@anthropic-ai/sdk` 1.8.0, and `test/scaffold.test.ts` checks the new exact list.
+6. **Environment read in a script.** `structure.md` says environment variables are read only in `src/server/config.ts`, which this spec does not create. `scripts/record-editor-fixtures.ts` therefore reads `ANTHROPIC_API_KEY`, `EDITOR_MODEL`, `MAX_MODEL_CALLS_PER_DAY` and `EDITOR_MAX_CALLS_PER_BOOT` itself (requirement 14.5), only when the owner runs it. The server spec may replace this with its own settings loader.
 
 ## Decisions where steering is silent
 
-- `editorial.md` says the editor's draft checks enforce each "must". Requirement 7.9 checks the voice rules that code can decide. "Adds no names, places, causes or quotes" cannot be checked by code; the prompt states it and the numeric fidelity check covers numbers only.
+- `editorial.md` says the editor's draft checks enforce each "must". Requirement 7.9 checks the voice rules that code can decide. "Adds no names, places, causes or quotes" cannot be fully checked by code; the prompt states it, the numeric fidelity check covers numbers, and requirement 7.10 covers capitalised words (names) that are not at the start of a sentence or a row. A name at the start of a row is not checked, and places and causes in lower case are not checked.
 - The numeric fidelity input is every slot text of the page together, as `editorial.md` says ("the input given for that page").
 - A slot may be empty in a draft only when the rules draft also left it empty (`optional`). The editor may fit more items than the rules draft, never fewer.
 - No current slot allows a blank row (`assemble` rejects empty rows, rule-compilers 8.4), so an empty string is only ever a slot separator.
 - Cached and remembered drafts count as no call and no draft on page 802.
+- Found in implementation: with `messages.parse` (4.2) a cut-off reply throws inside the SDK before the stop reason can be read, so it is `malformed` (5.1), not `max-tokens`; only a complete reply with that stop reason is `max-tokens`. A refusal counts as one rejected draft on page 802. SDK 1.8.0 sends the key as `Authorization: Bearer`.
 
 ## Requirement 1: Project changes and boundaries
 
@@ -38,13 +47,17 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 1.4 NO file in `src/grid`, `src/markup`, `src/pages`, `src/sources` or `src/compilers` SHALL import `src/editor`.
 
-## Requirement 2: Configuration
+## Requirement 2: Settings
 
-2.1 THE module `src/server/config.ts` SHALL export `loadConfig(env)`, where `env` defaults to `process.env`, returning `{ ok: true, config }` or `{ ok: false, problems }`, validated with zod, and SHALL be the only file that reads `process.env`.
+~~2.1 THE module `src/server/config.ts` SHALL export `loadConfig(env)` ...~~ Removed (owner answer 2).
 
-2.2 THE config SHALL hold `anthropicApiKey` (`null` when unset or empty), `editorModel` (default `claude-opus-5-5`), `maxModelCallsPerDay` (integer 0 to 10,000, default 60), `editorMaxCallsPerBoot` (integer 0 to 10,000, default 30) and `editorClient` (`auto` or `fixtures`, default `auto`).
+~~2.2 THE config SHALL hold ...~~ Removed (owner answer 2); the fields move to 2.4.
 
-2.3 IF a variable is invalid, THEN `loadConfig` SHALL return one problem per variable that names the variable and the rule (`MAX_MODEL_CALLS_PER_DAY must be an integer from 0 to 10000`) and never contains any variable's value.
+~~2.3 IF a variable is invalid ...~~ Removed (owner answer 2).
+
+2.4 THE module `src/editor/editor-types.ts` SHALL export `EditorSettings`, holding `anthropicApiKey` (`string` or `null`), `editorModel` (`string`), `maxModelCallsPerDay` (integer), `editorMaxCallsPerBoot` (integer) and `editorClient` (`auto` or `fixtures`), AND every function of `src/editor` that needs a setting SHALL take it as an argument.
+
+2.5 THE module `src/editor` SHALL not read the environment and SHALL not validate settings beyond what its own types require; reading and validating them belongs to the server spec.
 
 ## Requirement 3: Client interface
 
@@ -54,7 +67,7 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 3.3 A `DraftResult` SHALL be `{ ok: true, rows, requests }` or `{ ok: false, reason, status, requests }`, where `requests` is the number of calls made and `status` is an HTTP status or `null`.
 
-3.4 THE function `createEditorClient(config, fetch, fixtures)` SHALL return `null` and construct no SDK client WHILE `anthropicApiKey` is `null` and `editorClient` is `auto`, a `FixtureEditorClient` WHEN `editorClient` is `fixtures` (key ignored), and an `AnthropicEditorClient` otherwise.
+3.4 THE function `createEditorClient(settings, fetch, fixtures)` SHALL return `null` and construct no SDK client WHILE `anthropicApiKey` is `null` and `editorClient` is `auto`, `null` WHILE `editorClient` is `fixtures` and `fixtures` is empty, a `FixtureEditorClient` WHEN `editorClient` is `fixtures` and `fixtures` is not empty (key ignored), and an `AnthropicEditorClient` otherwise.
 
 ## Requirement 4: Anthropic client request
 
@@ -107,6 +120,8 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 7.8 THE row and slot numbers in violations SHALL be the slot id and the row's 1-based position in its group (`slot lead row 2 is 43 cells, limit 38`).
 
 7.9 A row SHALL not contain `!` or `?`, the words `breaking`, `shock`, `shocking` or `slams` (any case), or an all-capitals word of 2 or more letters, unless that character or word appears in the slot's input or is an allowed abbreviation from `editorial.md`, AND the last row of a headline slot SHALL not end with `.` or `...`.
+
+7.10 EVERY capitalised word of a folded row (a run of letters whose first letter is upper case) that does not start the row or follow `. `, `! ` or `? ` SHALL appear, compared in lower case, as a whole word in one of the slot texts of the page, unless it is an all-capitals word of 2 or more letters (decided by 7.9) or a month or weekday abbreviation of `editorial.md`, AND each missing word SHALL be reported once, in order of first appearance, as `name "X" not in input` with X as written in the draft.
 
 ## Requirement 8: Numeric fidelity
 
@@ -176,7 +191,7 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 ## Requirement 14: Recording script
 
-14.1 THE script `scripts/record-editor-fixtures.ts` SHALL load the config with `loadConfig`, AND IF `anthropicApiKey` is `null`, THEN SHALL print `ANTHROPIC_API_KEY is not set` and exit 1 without a call.
+14.1 THE script `scripts/record-editor-fixtures.ts` SHALL build `EditorSettings` from its environment (14.5), AND IF `anthropicApiKey` is `null`, THEN SHALL print `ANTHROPIC_API_KEY is not set` and exit 1 without a call.
 
 14.2 THE script SHALL run `runEdition` on the boot snapshot with an `AnthropicEditorClient` wrapped by a recorder, the config's caps and an empty cache, and SHALL write one fixture per AI page that made a call.
 
@@ -184,14 +199,18 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 14.4 THE script SHALL be run only by the owner with a real key. No test runs it, and no task asks Kiro to run it or to read any `.env` or secrets file.
 
+14.5 THE function `recordEditor(env, fetch)` SHALL read only `ANTHROPIC_API_KEY`, `EDITOR_MODEL` (default `claude-opus-5-5`), `MAX_MODEL_CALLS_PER_DAY` (default 60) and `EDITOR_MAX_CALLS_PER_BOOT` (default 30) from the `env` object it is given, AND IF a number is not an integer from 0 to 10,000, THEN SHALL print `<NAME> must be an integer from 0 to 10000` without the value and exit 1; only the entry point passes `process.env`.
+
 ## Requirement 15: Secrets and logging
 
 15.1 THE module `src/editor` SHALL write log lines only through `deps.log`, in the formats of the design, holding only page numbers, attempts, reason codes, HTTP statuses and counts.
 
-15.2 NO log line, result, status, fixture, thrown error or console output produced by `src/editor`, `loadConfig` or the SDK client on any path SHALL contain the API key.
+15.2 NO log line, result, status, fixture, thrown error or console output produced by `src/editor`, the recording script or the SDK client on any path SHALL contain the API key.
 
 ## Requirement 16: Tests and gate
 
-16.1 THE test suite SHALL contain one fast-check test per property in `design.md`, named `Property N:`. Tests SHALL use the real checks, compilers seam, frame builder and SDK, with a fake `fetch` transport for the SDK, and SHALL make no network request.
+16.1 THE test suite SHALL contain one fast-check test per property in `design.md`, named `Property N:`. Tests SHALL use the real checks, budget, `editPage`, compilers seam, frame builder and SDK, with a fake `fetch` transport for the SDK and a scripted `EditorClient` (the only thing a test replaces), and SHALL make no network request.
+
+16.3 WHILE `test/fixtures/editor/` holds no fixture file, THE file `test/editor/recorded-fixtures.test.ts` SHALL be skipped with a stated reason, AND no other test SHALL depend on recorded fixtures.
 
 16.2 WHEN the feature is complete, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` and `npm run grid:check` SHALL each exit 0.

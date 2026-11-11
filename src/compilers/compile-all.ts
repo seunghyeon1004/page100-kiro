@@ -121,7 +121,8 @@ function pageCheckProblem(problem: CompiledProblem): CompileProblem {
   };
 }
 
-function problemsOf(def: PageDef, page: CompiledPage, now: Date): CompileProblem[] {
+/** The problems `checkCompiledPage` and `buildScreen` (both `stale` values, every subpage) find; empty when the page is sound. */
+export function problemsOf(def: PageDef, page: CompiledPage, now: Date): CompileProblem[] {
   const found: CompileProblem[] = checkCompiledPage(def, page).map(pageCheckProblem);
   page.subpages.forEach((_, subpage) => {
     for (const stale of [false, true]) {

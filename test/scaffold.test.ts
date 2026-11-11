@@ -63,8 +63,8 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
     });
   });
 
-  it("lists exactly zod as the runtime dependency, and no optional or peer field", () => {
-    expect(pkg.dependencies).toEqual({ zod: "4.6.7" });
+  it("lists exactly the SDK and zod as the runtime dependencies (ai-editor 1.1), and no optional or peer field", () => {
+    expect(pkg.dependencies).toEqual({ "@anthropic-ai/sdk": "1.8.0", zod: "4.6.7" });
     expect(pkg.optionalDependencies).toBeUndefined();
     expect(pkg.peerDependencies).toBeUndefined();
   });
@@ -74,7 +74,7 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
       ...Object.values(pkg.devDependencies as JsonObject),
       ...Object.values(pkg.dependencies as JsonObject),
     ];
-    expect(versions).toHaveLength(9);
+    expect(versions).toHaveLength(10);
     for (const version of versions) {
       expect(typeof version === "string" && EXACT_VERSION.test(version)).toBe(true);
     }

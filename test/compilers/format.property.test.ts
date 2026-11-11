@@ -130,7 +130,9 @@ describe("formatters", () => {
 
   const times = fc.oneof(
     fc.date({ min: new Date(0), max: new Date(Date.UTC(2300, 0, 1)), noInvalidDate: false }),
-    fc.date({ min: new Date(0), max: new Date(Date.UTC(2300, 0, 1)) }).map((d) => d.toISOString()),
+    fc
+      .date({ min: new Date(0), max: new Date(Date.UTC(2300, 0, 1)), noInvalidDate: true })
+      .map((d) => d.toISOString()),
     fc.string(),
     fc.constant(null),
   );

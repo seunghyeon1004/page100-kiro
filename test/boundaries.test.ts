@@ -294,3 +294,87 @@ describe("compiler boundaries (rule-compilers 1.2 to 1.4)", () => {
     }
   });
 });
+
+describe("editor boundaries (ai-editor 1.2 to 1.4)", () => {
+  /** Each import or re-export statement of a file: its specifier and whether it is `import type` / `export type`. */
+  function importStatements(source: string): { specifier: string; typeOnly: boolean }[] {
+    const found: { specifier: string; typeOnly: boolean }[] = [];
+    for (const match of source.matchAll(
+      /\b(import|export)(\s+type)?\b[^;]*?\bfrom\s+["']([^"']+)["']/g,
+    )) {
+      if (match[3] !== undefined)
+        found.push({ specifier: match[3], typeOnly: match[2] !== undefined });
+    }
+    return found;
+  }
+
+  const sdk = "@anthropic-ai" + "/sdk";
+  const editorFiles = tsFiles("src/editor");
+
+  it("lets only files in src/editor import the model SDK, and only the client file construct it (1.2)", () => {
+    const constructorText = "new " + "Anthropic(";
+    for (const file of tsFiles("src")) {
+      const source = read(file);
+      const importsSdk = specifiers(source).some((s) => s === sdk || s.startsWith(`${sdk}/`));
+      if (!isInside(file, "src/editor")) {
+        expect(importsSdk, `${file} imports the SDK`).toBe(false);
+      }
+      if (file !== "src/editor/anthropic-editor-client.ts") {
+        expect(source.includes(constructorText), `${file} constructs the SDK client`).toBe(false);
+      }
+    }
+  });
+
+  it("lets src/editor import only src/editor, src/grid, src/markup, src/pages, src/compilers, type-only src/sources, the SDK, zod and node:crypto (1.3)", () => {
+    for (const file of editorFiles) {
+      const source = read(file);
+      for (const { specifier, typeOnly } of importStatements(source)) {
+        const target = resolvedTarget(file, specifier);
+        const allowed =
+          isInside(target, "src/editor") ||
+          isInside(target, "src/grid") ||
+          isInside(target, "src/markup") ||
+          isInside(target, "src/pages") ||
+          isInside(target, "src/compilers") ||
+          (typeOnly && isInside(target, "src/sources")) ||
+          target === sdk ||
+          target.startsWith(`${sdk}/`) ||
+          target === "zod" ||
+          target === "node:crypto";
+        expect(allowed, `${file} imports ${specifier}`).toBe(true);
+      }
+      expect(specifiers(source).length, `${file} has an import form the scan misses`).toBe(
+        importStatements(source).length,
+      );
+    }
+  });
+
+  it("keeps the process, console, globals, the clock, randomness and files out of src/editor (1.3)", () => {
+    const banned = [
+      /\bprocess\b/,
+      /\bconsole\./,
+      /\bglobalThis\b/,
+      /\bDate\.now\b/,
+      /\bnew Date\(\s*\)/,
+      /\bMath\.random\b/,
+      /node:fs/,
+    ];
+    for (const file of editorFiles) {
+      const source = read(file);
+      for (const pattern of banned) {
+        expect(pattern.test(source), `${file} matches ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+
+  it("lets no file in src/grid, src/markup, src/pages, src/sources or src/compilers import src/editor (1.4)", () => {
+    for (const dir of ["src/grid", "src/markup", "src/pages", "src/sources", "src/compilers"]) {
+      for (const file of tsFiles(dir)) {
+        for (const specifier of specifiers(read(file))) {
+          const target = resolvedTarget(file, specifier);
+          expect(isInside(target, "src/editor"), `${file} imports ${specifier}`).toBe(false);
+        }
+      }
+    }
+  });
+});
