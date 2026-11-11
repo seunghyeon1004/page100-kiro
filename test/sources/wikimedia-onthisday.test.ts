@@ -29,12 +29,14 @@ describe("parseWikimediaOnThisDay on recorded fixtures (requirements 12.1, 18.1)
     },
   );
 
-  it("keeps 40 events, 40 births and 40 deaths of 74, 233 and 115, the first 40 of each in feed order (owner answer 4)", () => {
+  it("keeps 40 events, 40 births and 40 deaths of 74, 233 and 115, spread over each list (owner answer 4, amended)", () => {
     const result = parseWikimediaOnThisDay(recorded("wikimedia-onthisday", BASE));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const { events, births, deaths } = result.value;
-    expect([events.length, births.length, deaths.length]).toEqual([40, 40, 40]);
+    // Selected events that fall outside the spread are kept too, so events may exceed 40.
+    expect(events.length).toBeGreaterThanOrEqual(40);
+    expect([births.length, deaths.length]).toEqual([40, 40]);
     expect(events[0]).toEqual({
       year: 2024,
       text: "A vehicle-ramming attack in Zhuhai, China, kills 38 people and injures 48.",
@@ -43,7 +45,7 @@ describe("parseWikimediaOnThisDay on recorded fixtures (requirements 12.1, 18.1)
     expect(deaths[0]?.year).toBe(2024);
   });
 
-  it("keeps the recorded order: each kept list is a prefix of the wire list", () => {
+  it("keeps the recorded order and both ends: each kept list is a subsequence of the wire list from its first to its last entry", () => {
     const body = recorded("wikimedia-onthisday", BASE) as Record<
       string,
       { year: number; text: string }[]
@@ -51,8 +53,15 @@ describe("parseWikimediaOnThisDay on recorded fixtures (requirements 12.1, 18.1)
     const result = parseWikimediaOnThisDay(body);
     if (!result.ok) throw new Error("fixture did not parse");
     for (const key of ["events", "births", "deaths"] as const) {
-      const wire = (body[key] ?? []).slice(0, 40).map(({ year, text }) => ({ year, text }));
-      expect(result.value[key]).toEqual(wire);
+      const wire = (body[key] ?? []).map(({ year, text }) => ({ year, text }));
+      const kept = result.value[key];
+      let at = -1;
+      for (const entry of kept) {
+        at = wire.findIndex((w, i) => i > at && w.year === entry.year && w.text === entry.text);
+        expect(at, `${key}: ${entry.text}`).toBeGreaterThanOrEqual(0);
+      }
+      expect(kept[0]).toEqual(wire[0]);
+      expect(kept.at(-1)).toEqual(wire.at(-1));
     }
   });
 
@@ -64,20 +73,21 @@ describe("parseWikimediaOnThisDay on recorded fixtures (requirements 12.1, 18.1)
     }
   });
 
-  it("keeps an entry after the 40th when the selected list holds the same year and text", () => {
+  it("keeps an entry the spread skips when the selected list holds the same year and text", () => {
     const entry = (i: number) => ({ year: 1000 + i, text: `Event ${String(i)}`, pages: [] });
     const events = Array.from({ length: 50 }, (_, i) => entry(i));
     const kept = parseWikimediaOnThisDay({
       events,
       births: [],
       deaths: [],
-      selected: [entry(44), { year: 1044, text: "Other text", pages: [] }],
+      // Of 50 entries the spread keeps positions 0, 1, 3, ...: position 2 is skipped.
+      selected: [entry(2), { year: 1004, text: "Other text", pages: [] }],
     });
     expect(kept.ok).toBe(true);
     if (!kept.ok) return;
     expect(kept.value.events).toHaveLength(41);
-    expect(kept.value.events.at(-1)).toEqual({ year: 1044, text: "Event 44" });
-    expect(kept.value.events[39]).toEqual({ year: 1039, text: "Event 39" });
+    expect(kept.value.events[2]).toEqual({ year: 1002, text: "Event 2" });
+    expect(kept.value.events.at(-1)).toEqual({ year: 1049, text: "Event 49" });
   });
 
   it("keeps exactly 40 of 41 entries when selected is absent or empty", () => {
@@ -146,7 +156,7 @@ describe("fetchWikimediaOnThisDay", () => {
     expect(OnThisDay.safeParse(result.value).success).toBe(true);
     expect(result.value.month).toBe(11);
     expect(result.value.day).toBe(11);
-    expect(result.value.events).toHaveLength(40);
+    expect(result.value.events.length).toBeGreaterThanOrEqual(40);
   });
 
   it("fails with the HTTP failure and the URL", async () => {

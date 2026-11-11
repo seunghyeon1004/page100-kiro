@@ -132,7 +132,7 @@ The design was written from the pages-and-sources design document. Where the cod
 
 5.4 THE module `src/compilers/weather-symbol.ts` SHALL map a WMO weather code to `clear`, `cloud`, `rain`, `snow`, `storm`, `fog` or `null` by the design table, and draw each of the six as the 6 × 6 pixel bitmap in the design.
 
-5.5 THE module `src/compilers/moon-disc.ts` SHALL draw an 8 × 6 cell disc lit by the design formula for an illuminated fraction (clamped to 0 to 1) and a waxing flag: fraction 0 lights no pixel, fraction 1 lights every disc pixel, waxing lights the right side.
+5.5 THE module `src/compilers/moon-disc.ts` SHALL draw a 16 × 10 cell (32 × 30 pixel) disc, vertical radius 15 pixels and horizontal radius scaled for the 5:4 screen (design), lit by the design formula for an illuminated fraction (clamped to 0 to 1) and a waxing flag: fraction 0 lights no pixel, fraction 1 lights every disc pixel, waxing lights the right side. It SHALL also export the extent of the whole disc (every pixel on it, lit or not).
 
 5.6 THE module `src/compilers/block-font.ts` SHALL draw text of `A` to `Z`, `0` to `9` and space as 5 × 7 pixel glyphs with 1 pixel between glyphs on a canvas 3 cells high, AND SHALL return `undefined` for any other character.
 
@@ -190,7 +190,7 @@ The design was written from the pages-and-sources design document. Where the cod
 
 10.2 THE page 110 + n (n from 1 to 8) SHALL show story n of 10.1 as a lead slot (body, at most 5 rows of 38 cells) and, from the first linked article whose extract folds, a `Background: <title>` heading when it fits one row and a background slot (body, at most 12 rows of 38). WHEN story n does not exist, it SHALL show the no-story page in the design with outcome `no-data`.
 
-10.3 THE page 120 SHALL list most-read items in source order as rank, title wrapped to at most 2 rows of 25 cells, and views, as whole items.
+10.3 THE page 120 SHALL list most-read items in source order as position (1, 2, 3 and so on in the list shown, with no gaps; the feed's own rank is not shown), title wrapped to at most 2 rows of 25 cells, and views, as whole items.
 
 10.4 THE page 700 SHALL show the featured article's title wrapped to at most 2 rows of 38 cells (left out when it does not fit) and a body slot of at most 16 rows of 38 cells.
 
@@ -214,7 +214,7 @@ The design was written from the pages-and-sources design document. Where the cod
 
 14.1 THE pages 500 and 501 SHALL name the data's day with `formatDayMonth`, never the day of `now`.
 
-14.2 THE page 500 SHALL show up to six events chosen by the design's spread rule, each as year and a body slot of at most 3 rows of 32 cells. THE page 501 SHALL show up to four births under `Born` and four deaths under `Died`, each as year and a body slot of at most 2 rows of 32 cells.
+14.2 THE page 500 SHALL show up to six events chosen by the design's spread rule, each as year and a body slot of at most 3 rows of 32 cells. THE page 501 SHALL show up to four births under `Born` and four deaths under `Died`, each chosen across the whole kept list: for a list of n items sorted by year (stable), the items at positions round(i (n − 1) / 3) for i = 0 to 3 (all of them when n ≤ 4), shown oldest first, with no duplicates; the chosen items are the editorial input and the editor seam is unchanged. Each as year and a body slot of at most 2 rows of 32 cells.
 
 14.3 THE page 550 SHALL ask up to five questions, each an event's fitted text without its year and the year concealed, chosen by the design's seeded rule from the UTC date of `now`, AND no year of a question SHALL appear as a number token in any unconcealed cell. Zero eligible events give the no-data page.
 
@@ -222,7 +222,7 @@ The design was written from the pages-and-sources design document. Where the cod
 
 15.1 THE page 600 SHALL list quakes in source order as time, magnitude, depth and place (at most 2 rows), as whole items, with a count row when not all fit, AND an empty list SHALL give a compiled page that says no earthquakes are listed.
 
-15.2 THE page 601 SHALL show the phase name, the moon disc, the illuminated percentage and the next full and new moon as date and `HH:MM UTC`, from `moonAt(now)`; `undefined` gives the no-data page.
+15.2 THE page 601 SHALL show the phase name, the whole moon disc (lit cells as contiguous yellow mosaics, and every cell that lies inside the disc with no lit pixel as a separated all-six-blocks blue mosaic, so that the dark side reads as a dotted disc and a full moon has no blue cell), 16 cells wide and 10 rows tall with the text beside it, the illuminated percentage and the next full and new moon as date and `HH:MM UTC`, from `moonAt(now)`; `undefined` gives the no-data page.
 
 15.3 THE page 610 SHALL list launches in source order as date, time with `UTC`, status, name (at most 2 rows) and provider and pad, as whole items. An empty list gives the no-data page.
 

@@ -197,7 +197,7 @@ interface ArticleRef { title: string; extract: string | null; url: string | null
 interface FeaturedFeed { date: string /* D, YYYY-MM-DD */; news: NewsStory[] | null; mostRead: MostRead[] | null; featuredArticle: ArticleRef | null }
 interface NewsStory { text: string; articles: ArticleRef[] }
 interface MostRead { rank: number; title: string; views: number; extract: string | null }
-interface OnThisDay { month: number; day: number; events: DayEntry[]; births: DayEntry[]; deaths: DayEntry[] /* each: the first 40 as delivered, plus any later entry that the response's `selected` list holds (12.7) */ }
+interface OnThisDay { month: number; day: number; events: DayEntry[]; births: DayEntry[]; deaths: DayEntry[] /* each: 40 spread evenly over the list as delivered, plus any other entry that the response's `selected` list holds (12.7a) */ }
 interface DayEntry { year: number /* negative for BC */; text: string }
 interface Weather { cities: CityWeather[] /* CITIES order, 24 */ }
 interface CityWeather { cityId: CityId; observedAt: Iso; temperatureC: number | null; weatherCode: number | null; windKmh: number | null; daily: DayForecast[] }

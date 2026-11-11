@@ -168,8 +168,9 @@ function allowedTokens(
       for (const a of story.articles) out.push(...tokens(a.title, a.extract));
     }
   } else if (number === 120) {
+    out.push(...range(1, 19)); // positions in our list
     for (const m of feed.mostRead ?? []) {
-      out.push(...tokens(formatInteger(m.rank, 999), formatInteger(m.views, 99_999_999), m.title));
+      out.push(...tokens(formatInteger(m.views, 99_999_999), m.title));
     }
   } else if (number === 700) {
     out.push(...tokens(feed.featuredArticle?.title ?? null, feed.featuredArticle?.extract ?? null));

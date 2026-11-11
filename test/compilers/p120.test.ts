@@ -35,24 +35,24 @@ describe("page 120 (requirement 10.3)", () => {
       "P120 Page 100        Wed 11 Nov 14:05:09
       MOST READ ON WIKIPEDIA                  
           Article                        Views
-        2 Ramayana: Part 1             840,888
-        5 Russell Brand                545,717
-        6 Jensen Huang                 542,553
-        7 David Walliams               512,804
-        9 Thomas Massie                166,628
-       10 SS Edmund Fitzgerald         163,598
-       11 Carson Wentz                 158,702
-       12 Scene (2026 film)            143,180
-       13 Lara Stone                   139,117
-       14 Deaths in 2026               138,565
-       15 Kirk Cousins                 136,900
-       16 Pete Hegseth                 127,687
-       17 Nvidia                       123,851
-       18 List of highest-grossing     122,614
+        1 Ramayana: Part 1             840,888
+        2 Russell Brand                545,717
+        3 Jensen Huang                 542,553
+        4 David Walliams               512,804
+        5 Thomas Massie                166,628
+        6 SS Edmund Fitzgerald         163,598
+        7 Carson Wentz                 158,702
+        8 Scene (2026 film)            143,180
+        9 Lara Stone                   139,117
+       10 Deaths in 2026               138,565
+       11 Kirk Cousins                 136,900
+       12 Pete Hegseth                 127,687
+       13 Nvidia                       123,851
+       14 List of highest-grossing     122,614
           Indian films                        
-       19 Abdul El-Sayed               119,560
-       20 Godzilla Minus Zero          107,366
-       21 Jemima Goldsmith              96,742
+       15 Abdul El-Sayed               119,560
+       16 Godzilla Minus Zero          107,366
+       17 Jemima Goldsmith              96,742
                                               
       Wikipedia, CC BY-SA 4.0        07:16 UTC
        Index     News      Article   Weather  "
@@ -63,7 +63,7 @@ describe("page 120 (requirement 10.3)", () => {
     const alt = pageOf(result).subpages[0].alt;
     expect(alt).toHaveLength(1);
     expect(alt[0]).toMatchObject({ kind: "table", headers: ["Rank", "Article", "Views"] });
-    expect(tableRows(result)[0]).toEqual(["2", "Ramayana: Part 1", "840,888"]);
+    expect(tableRows(result)[0]).toEqual(["1", "Ramayana: Part 1", "840,888"]);
   });
 
   it("gives the no-data page for no list and for an empty list", () => {
@@ -82,7 +82,8 @@ describe("page 120 (requirement 10.3)", () => {
         { rank: 3, title: "Kept", views: 1_000, extract: null },
       ]),
     );
-    expect(tableRows(out)).toEqual([["3", "Kept", "1,000"]]);
+    // The position in our list, not the feed rank 3.
+    expect(tableRows(out)).toEqual([["1", "Kept", "1,000"]]);
   });
 
   it("ends the list at the first item that does not fit and never cuts through an item", () => {
@@ -98,11 +99,26 @@ describe("page 120 (requirement 10.3)", () => {
     expect(tableRows(out)).toHaveLength(9);
   });
 
-  it("shows n/a for a rank or views outside the range", () => {
+  it("shows the position in our list, 1, 2, 3 with no gaps, and never the feed rank", () => {
+    const out = compile120(
+      withMostRead([
+        { rank: 2, title: "Second", views: 9, extract: null },
+        { rank: 5, title: "Bad \u2603", views: 9, extract: null },
+        { rank: 6, title: "Sixth", views: 9, extract: null },
+        { rank: 7, title: "Seventh", views: 9, extract: null },
+        { rank: 9, title: "Ninth", views: 9, extract: null },
+      ]),
+    );
+    expect(tableRows(out).map((r) => r[0])).toEqual(["1", "2", "3", "4"]);
+    const text = screenText(out, 0, NOW);
+    expect(text).not.toMatch(/ [5679] (Sixth|Seventh|Ninth|Second)/);
+  });
+
+  it("shows n/a for views outside the range, and the position whatever the feed rank", () => {
     const out = compile120(
       withMostRead([{ rank: 5000, title: "Big", views: 1e12, extract: null }]),
     );
-    expect(tableRows(out)[0]).toEqual(["n/a", "Big", "n/a"]);
+    expect(tableRows(out)[0]).toEqual(["1", "Big", "n/a"]);
     expect(pageProblems(out)).toEqual([]);
     expect(cloneSnapshot().version).toBe(1);
   });

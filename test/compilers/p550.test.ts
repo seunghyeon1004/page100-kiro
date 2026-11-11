@@ -46,21 +46,21 @@ describe("page 550 (requirement 14.3)", () => {
       QUIZ OF THE DAY                         
        In which year did each of these happen?
                                               
-       1 NASA launches Gemini 12.             
+       1 Józef Pilsudski assumes supreme      
+         military power in Poland...          
+         Year: 1918                           
+       2 NASA launches Gemini 12.             
          Year: 1966                           
                                               
-       2 The House of Lords Act is given Royal
-         Assent, restricting membership of... 
-         Year: 1999                           
-       3 Russo-Ukrainian War: Ukrainian armed 
-         forces enter the city of Kherson...  
-         Year: 2022                           
-       4 A strong earthquake with the         
-         magnitude 6.8 hits northern Burma... 
-         Year: 2012                           
-       5 World War II: France's zone libre is 
-         occupied by German forces in Case... 
-         Year: 1942                           
+       3 Typhoon Vamco makes landfall in Luzon
+         and several offshore islands...      
+         Year: 2020                           
+       4 After 30 years in power, Maumoon     
+         Abdul Gayoom was succeeded by...     
+         Year: 2008                           
+       5 Cherry Valley massacre: Loyalists and
+         Seneca Indian forces attack a fort...
+         Year: 1778                           
                                               
        Press Reveal to show the answers.      
                                               

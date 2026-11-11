@@ -184,6 +184,8 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 
 12.7 (added by rule-compilers owner answer 4, 2026-11-11) THE on-this-day normaliser SHALL keep, in each of `events`, `births` and `deaths`, the first 40 entries in the order the response gives them and every later entry that the response's `selected` list also holds (same year and same text), AND each kept `DayEntry` SHALL hold only `year` and `text`. This keeps the boot snapshot small (529,001 bytes before, 118,502 after).
 
+12.7a (owner amendment by hand, 2026-11-11, replaces "the first 40 entries" in 12.7) THE on-this-day normaliser SHALL keep, in each list longer than 40, the entries at positions round(j * (n - 1) / 39) for j = 0..39 of the list as delivered, so that every era the feed lists is represented, plus every other entry that `selected` holds, in the order delivered. Reason: the feed lists the newest years first, so "the first 40" made pages 500 and 501 show only recent decades. Verify: `npm test -- test/sources/wikimedia-onthisday.test.ts`.
+
 ## Requirement 13: Per-source rules
 
 13.1 THE `fetchWikimediaFeed` function SHALL request today and yesterday, and SHALL set each of `news`, `mostRead` and `featuredArticle` to today's value when present, else yesterday's, else `null`. It SHALL succeed when at least one day parses, and fail with today's failure when neither does.

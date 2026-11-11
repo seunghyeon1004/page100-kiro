@@ -29,7 +29,8 @@ export function compile120(entry: SourceEntry<"wikimedia-feed">): CompileResult 
     if (used + wrapped.rows.length > ITEM_ROWS) break;
     used += wrapped.rows.length;
     items.push({
-      rank: formatInteger(item.rank, 999),
+      // The position in our list (1, 2, 3, no gaps), not the feed's own rank.
+      rank: formatInteger(items.length + 1, 999),
       title: wrapped.rows,
       views: formatInteger(item.views, 99_999_999),
     });

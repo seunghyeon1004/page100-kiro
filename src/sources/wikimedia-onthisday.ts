@@ -49,15 +49,22 @@ function entryKey(e: z.infer<typeof DayEntryWire>): string {
 }
 
 /**
- * The first `MAX_DAY_ENTRIES` entries in the order delivered, plus every later entry that the
- * response's `selected` list also holds (same year and same text), in the order delivered.
+ * At most `MAX_DAY_ENTRIES` entries spread evenly over the list as delivered (positions
+ * round(j * (n - 1) / (MAX_DAY_ENTRIES - 1)), so every era the feed covers is kept, not only the
+ * most recent years it lists first), plus every other entry that the response's `selected` list
+ * also holds (same year and same text). The order delivered is kept.
  */
 function entries(
   list: readonly z.infer<typeof DayEntryWire>[],
   selectedKeys: ReadonlySet<string>,
 ): DayEntry[] {
+  const last = list.length - 1;
+  const kept = new Set<number>();
+  for (let j = 0; j < MAX_DAY_ENTRIES; j += 1) {
+    kept.add(list.length <= MAX_DAY_ENTRIES ? j : Math.round((j * last) / (MAX_DAY_ENTRIES - 1)));
+  }
   return list
-    .filter((e, i) => i < MAX_DAY_ENTRIES || selectedKeys.has(entryKey(e)))
+    .filter((e, i) => kept.has(i) || selectedKeys.has(entryKey(e)))
     .map((e) => ({ year: cleanNumber(e.year), text: e.text }));
 }
 

@@ -43,21 +43,21 @@ describe("page 500 (requirement 14.2)", () => {
       ON THIS DAY                             
        Events on 11 Nov                       
                                               
-         1921 The Tomb of the Unknowns is     
-              dedicated by U.S. President     
-              Warren G. Harding at...         
-         1942 The Turkish parliament passes   
-              the Varlik Vergisi, a capital   
-              tax mostly levied on...         
-         1967 Vietnam War: In a propaganda    
-              ceremony in Phnom Penh,         
-              Cambodia, three American...     
-         1982 Space Shuttle Columbia launches 
-              from the Kennedy Space Center on
-              STS-5, the first operational... 
-         2004 New Zealand Tomb of the Unknown 
-              Warrior is dedicated at the     
-              National War Memorial...        
+          109 Roman emperor Trajan celebrates 
+              his newly constructed naumachia 
+              with a display of ships and...  
+         1750 The F.H.C. Society, also known  
+              as the Flat Hat Club, is formed 
+              at Raleigh Tavern...            
+         1918 Józef Pilsudski assumes supreme 
+              military power in Poland -      
+              symbolic first day of Polish... 
+         1961 Thirteen Italian Air Force      
+              servicemen, deployed to the     
+              Congo as a part of the UN...    
+         1999 The House of Lords Act is given 
+              Royal Assent, restricting       
+              membership of the British...    
          2024 A vehicle-ramming attack in     
               Zhuhai, China, kills 38 people  
               and injures 48.                 

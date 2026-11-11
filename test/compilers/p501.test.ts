@@ -44,28 +44,42 @@ describe("page 501 (requirement 14.2)", () => {
       "P501 Page 100        Wed 11 Nov 14:05:09
       ON THIS DAY: BIRTHS AND DEATHS          
        Born on 11 Nov                         
-         1984 Stephen Hunt, English footballer
-         1988 David Depetris, Argentinian-    
-              Slovak footballer               
-         1992 Sofía Luini, Argentine tennis   
-              player                          
+         1050 Henry IV, Holy Roman Emperor    
+              (died 1106)                     
+         1925 June Whitfield, English actress 
+              (died 2018)                     
+         1964 Philip McKeon, American actor   
+              (died 2019)                     
          2005 Ben Gannon-Doak, Scottish       
               footballer                      
                                               
-                                              
        Died on 11 Nov                         
-         1999 Mary Kay Bergman, American voice
-              actress (born 1961)             
-         2008 Herb Score, American baseball   
-              player and sportscaster (born...
-         2013 Atilla Karaosmanoglu, Turkish   
-              economist and politician...     
-         2024 John Robinson, American football
-              player and coach (born 1935)    
+          405 Arsacius of Tarsus, Tarsian     
+              archbishop (born 324)           
+         1940 Muhittin Akyüz, Turkish general 
+              and diplomat (born 1870)        
+         2000 Sandra Schmitt, German skier    
+              (born 1981)                     
+         2024 Frank Auerbach, German-British  
+              painter (born 1931)             
                                               
       Wikipedia, CC BY-SA 4.0        07:16 UTC
        Index     Events    Quiz      Quakes   "
     `);
+  });
+
+  it("chooses across the kept list, oldest first: positions round(i (n - 1) / 3)", () => {
+    const years = [2001, 1650, 1990, 1200, 1955, 1900, 1812, 1775, 1999, 1500];
+    const list = years.map((year, i) => ({ year, text: `Person ${String(i)}` }));
+    const entry = { ...ENTRY, value: { ...ENTRY.value, births: list, deaths: list.slice(0, 3) } };
+    const slots = editorialInput(entry).slots;
+    const textsOf = (prefix: string) =>
+      slots.filter((s) => s.id.startsWith(prefix)).map((s) => s.text);
+    // Sorted by year, n = 10: 1200 (3), 1500 (9), 1650 (1), 1775 (7), 1812 (6), 1900 (5),
+    // 1955 (4), 1990 (2), 1999 (8), 2001 (0). Positions 0, 3, 6, 9 give 1200, 1775, 1955, 2001.
+    expect(textsOf("born")).toEqual(["Person 3", "Person 7", "Person 4", "Person 0"]);
+    // Three deaths (2001, 1650, 1990): all of them, oldest first.
+    expect(textsOf("died")).toEqual(["Person 1", "Person 2", "Person 0"]);
   });
 
   it("gives two headings and two lists", () => {

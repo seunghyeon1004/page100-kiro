@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { formatPercent } from "../../src/compilers/format.js";
+import { moonAt } from "../../src/compilers/moon.js";
 import { compile601 } from "../../src/compilers/p601-moon.js";
 import { NOW, markupOf, pageOf, pageProblems, plainOf, screenText } from "./boot-snapshot.js";
 
@@ -17,19 +19,19 @@ describe("page 601 (requirement 15.2)", () => {
       THE MOON TONIGHT                        
        Waxing crescent                        
                                               
-            🬀🬞   5% illuminated               
-              🬃                               
-              ▐  Next full moon               
-              ▐  Tue 24 Nov 14:54 UTC         
-              🬃  Next new moon                
-            🬏🬁   Wed 09 Dec 00:53 UTC         
-                                              
+           ██████🬇█                           
+          █████████🬧     5% illuminated       
+         ███████████🬪                         
+        ████████████🬉🬓   Next full moon       
+        █████████████▌   Tue 24 Nov 14:54 UTC 
+        █████████████▌                        
+        ████████████🬦🬄   Next new moon        
+         ███████████🬜    Wed 09 Dec 00:53 UTC 
+          █████████🬘                          
+           ██████🬇█                           
                                               
        Times are computed here and may differ 
        from published tables by a few minutes.
-                                              
-                                              
-                                              
                                               
                                               
                                               
@@ -75,5 +77,54 @@ describe("page 601 (requirement 15.2)", () => {
       const out = compile601(new Date(t));
       expect(pageProblems(out, new Date(t)), t).toEqual([]);
     }
+  });
+
+  // The first hour after the new moon of 2026-12-09 at which the page prints 4%, found through the
+  // real moonAt and formatter, not typed in.
+  function fourPercentWaxing(): Date {
+    for (let h = 0; h < 24 * 6; h++) {
+      const t = new Date(Date.parse("2026-12-09T01:00:00Z") + h * 3_600_000);
+      const state = moonAt(t);
+      if (state?.waxing === true && formatPercent(state.illuminated * 100) === "4%") return t;
+    }
+    throw new Error("no 4% waxing hour found");
+  }
+
+  function discCells(t: Date) {
+    const content = pageOf(compile601(t)).subpages[0].content;
+    // Disc: cols 1 to 16, content rows 2 to 11.
+    return content.slice(2, 12).flatMap((row) => row.slice(1, 17));
+  }
+
+  it("draws the whole disc: at 4% waxing yellow contiguous cells and blue separated cells", () => {
+    const t = fourPercentWaxing();
+    expect(plainOf(markupOf(compile601(t)))).toContain("4% illuminated");
+    const cells = discCells(t);
+    const yellow = cells.filter((c) => c.kind === "mosaic" && !c.separated && c.fg === "yellow");
+    const blue = cells.filter((c) => c.kind === "mosaic" && c.separated && c.fg === "blue");
+    expect(yellow.length).toBeGreaterThan(0);
+    expect(blue.length).toBeGreaterThan(0);
+    for (const c of blue) expect(c).toMatchObject({ bits: 63, bg: "black" });
+    expect(cells.filter((c) => c.kind === "mosaic")).toHaveLength(yellow.length + blue.length);
+  });
+
+  it("has no blue cell at full moon", () => {
+    const cells = discCells(new Date("2026-11-24T14:53:00Z"));
+    expect(cells.some((c) => c.kind === "mosaic" && c.fg === "blue")).toBe(false);
+    expect(cells.some((c) => c.kind === "mosaic" && c.fg === "yellow")).toBe(true);
+  });
+
+  it("keeps the text beside the disc, clear of it", () => {
+    const content = pageOf(result).subpages[0].content;
+    content.forEach((row, r) => {
+      const inDiscRows = r >= 2 && r <= 11;
+      // Nothing but mosaics and spaces in the disc's columns 1 to 17 on its rows; no mosaic elsewhere.
+      if (inDiscRows) {
+        expect(row.slice(1, 18).every((c) => c.kind === "mosaic" || c.ch === " ")).toBe(true);
+        expect(row.slice(18).every((c) => c.kind === "text")).toBe(true);
+      } else {
+        expect(row.every((c) => c.kind === "text")).toBe(true);
+      }
+    });
   });
 });
