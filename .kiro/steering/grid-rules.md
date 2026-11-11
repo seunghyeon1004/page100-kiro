@@ -96,7 +96,7 @@ middle    bit 2 (4)    bit 3 (8)
 bottom    bit 4 (16)   bit 5 (32)
 ```
 
-Bit k corresponds to Unicode sextant position k+1, so `BLOCK SEXTANT-135` has bits 0, 2 and 4.
+Bit k corresponds to Unicode sextant position k+1. For example, `BLOCK SEXTANT-235` (v = 22) has bits 1, 2 and 4 (sextant positions 2, 3 and 5), and it is U+1FB14. Bits 0, 2 and 4 together make v = 21, which is U+258C LEFT HALF BLOCK, not a sextant.
 
 Mapping from pattern value v (0-63) to a code point:
 
@@ -108,7 +108,7 @@ Mapping from pattern value v (0-63) to a code point:
 | 63 (all six) | U+2588 FULL BLOCK |
 | any other v | U+1FB00 + v - 1 - (v > 21 ? 1 : 0) - (v > 42 ? 1 : 0) |
 
-That gives 60 sextant code points, U+1FB00 to U+1FB3B, in order: v=1 is U+1FB00, v=22 is U+1FB14 (`SEXTANT-235`), v=43 is U+1FB28 (`SEXTANT-1246`), v=62 is U+1FB3B. The mapping is a bijection over all 64 values. It was checked against the Unicode 15.0 character names and a test checks it again. Separated mosaics use the same code points; the `separated` flag is stored separately and drawn with gaps by the renderer.
+That gives 60 sextant code points, U+1FB00 to U+1FB3B, in order: v=1 is U+1FB00, v=22 is U+1FB14 (`SEXTANT-235`), v=43 is U+1FB28 (`SEXTANT-1246`), v=62 is U+1FB3B. The mapping is a bijection over all 64 values. The four anchors (v = 1, 22, 43, 62) and the order of the 60 sextant code points are checked by tests. No Unicode data file is downloaded. Separated mosaics use the same code points; the `separated` flag is stored separately and drawn with gaps by the renderer.
 
 ## Character repertoire
 
@@ -120,7 +120,28 @@ A text cell may hold exactly these code points:
 
 Nothing else is allowed: no control characters, tabs or emoji, and no mosaic code points inside text cells. The repertoire is defined once, in `src/grid/repertoire.ts`. The font subset is built from that file, and `grid:check` fails if the font lacks a glyph for any code point in it.
 
-Source text is folded into the repertoire by one function, applied in this order: NFC; fixed replacements (`‘ ’` to `'`, `“ ”` to `"`, `– —` to `-`, `…` to `...`, U+00A0 to space, `×` to `x`); NFD with combining marks stripped; NFC again. If any code point is still outside the repertoire, folding fails for that item and the compiler skips the item. It never prints a substitute character.
+Source text is folded into the repertoire by one function, applied in this order: NFC; fixed replacements (the table below); NFD with combining marks stripped, applied only to each code point that is still outside the repertoire, so repertoire letters keep their accents; NFC again. If any code point is still outside the repertoire, folding fails for that item and the compiler skips the item. It never prints a substitute character.
+
+Fixed replacements, applied to each code point after NFC:
+
+| Source | Replacement |
+|---|---|
+| `‘` `’` (U+2018, U+2019) | `'` |
+| `“` `”` (U+201C, U+201D) | `"` |
+| `–` `—` (U+2013, U+2014) | `-` |
+| `…` (U+2026) | `...` |
+| U+00A0 | space |
+| `×` (U+00D7) | `x` |
+| `Ł` `ł` (U+0141, U+0142) | `L` `l` |
+| `Đ` `đ` (U+0110, U+0111) | `D` `d` |
+| `Œ` `œ` (U+0152, U+0153) | `OE` `oe` |
+| `ı` (U+0131) | `i` |
+| `«` `»` (U+00AB, U+00BB) | `"` |
+| U+2002, U+2003, U+2009, U+202F | space |
+| U+00AD (soft hyphen) | removed |
+| U+2010, U+2011, U+2212 | `-` |
+| `′` (U+2032) | `'` |
+| `″` (U+2033) | `"` |
 
 ## Page markup
 

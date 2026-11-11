@@ -29,12 +29,12 @@ Versions were read from the npm registry on 2026-11-11 (`npm view <pkg> version 
 | `typescript` | 6.0.3 | 7.0.2 | `typescript-eslint` 8.72.2 declares the peer range `typescript >=4.8.4 <6.1.0`, so 7.x is not supported for type-aware linting. |
 | `vitest` | 4.1.12 | 5.1.0 | vitest 5.1.0 needs Node `^22.12.0 \|\| ^24.0.0 \|\| >=26.0.0` and lists `vite` as a peer only, which would add a dev dependency `tech.md` does not list. 4.1.12 supports Node `^20.0.0` and depends on `vite` directly. |
 | `fast-check` | 4.10.2 | 4.10.2 | |
-| `eslint` | 10.14.0 | 10.14.0 | Needs Node `^20.19.0 \|\| ^22.13.0 \|\| >=24` (see the open question on `engines`). |
+| `eslint` | 10.14.0 | 10.14.0 | Needs Node `^20.19.0 \|\| ^22.13.0 \|\| >=24`. The `engines` field `>=20.19.0` also admits Node 21.x, which this range does not list. Node 21 is end-of-life, so this is accepted. |
 | `typescript-eslint` | 8.72.2 | 8.72.2 | Peer `eslint ^10.0.0` is satisfied. |
 | `prettier` | 3.9.10 | 3.9.10 | |
 | `@types/node` | 20.19.43 | 26.6.6 | Matches the lowest supported Node, so code cannot use a newer Node API by accident. Satisfies vitest 4's peer `^20.0.0`. |
 
-Install command (task 1.1; it uses the network, so Kiro asks the user before running it):
+Install command (task 1.1; the owner allowed this npm install):
 
 ```
 npm install --save-dev --save-exact typescript@6.0.3 vitest@4.1.12 fast-check@4.10.2 eslint@10.14.0 typescript-eslint@8.72.2 prettier@3.9.10 @types/node@20.19.43
@@ -98,6 +98,7 @@ Every file exports one main thing; small helpers that belong to it are exported 
 | `repertoire.ts` | `REPERTOIRE`, `isRepertoireCodePoint` |
 | `fold-text.ts` | `foldText`, `FoldResult` |
 | `blank-cell.ts` | `BLANK_CELL`, `isBlankCell` |
+| `non-empty.ts` | `toNonEmpty` (an array to `NonEmpty<T>`, or `undefined` when it is empty) |
 | `grid-violation.ts` | `GridViolation`, `GRID_VIOLATION_CODES`, message helpers (`formatCodePoint`, `quoteIfSafe`) |
 | `check-cell.ts` | `checkCell` (the shared cell rules, requirement 9) |
 | `check-rows.ts` | `checkRows` (the shared shape walk and copy, requirements 8.3 to 8.9) |
@@ -252,7 +253,7 @@ Parser templates:
 ### foldText
 
 1. `s.normalize("NFC")`.
-2. Replace each fixed source code point with its target (one pass over the code points, a lookup in a frozen `Map`).
+2. Replace each code point in the fixed table of requirement 7.13 with its target (one pass over the code points, a lookup in a frozen `Map`). A target may be more than one character (`Œ` to `OE`).
 3. For each code point (iterated with `for...of`, so a lone surrogate is one item): keep it when `isRepertoireCodePoint` is true; otherwise append `ch.normalize("NFD").replace(/\p{M}/gu, "")`.
 4. `normalize("NFC")` on the result.
 5. Collect the code points still outside the repertoire, each once, in order of first appearance. None: `{ ok: true, text }`. Some: `{ ok: false, code: "fold-unrepresentable", codePoints }`.
@@ -381,7 +382,7 @@ These cover cases a property does not pin to exact values.
 - `test/grid/contrast.test.ts`: all 64 ratios to 2 decimals against the matrix in `grid-rules.md`, written out in the test; 4.00 and 5.25 (4.2, 4.5); no matrix value other than 1.00 appears as a numeric literal in `src/grid/contrast.ts` (4.1).
 - `test/grid/mosaic-code-point.test.ts`: the four anchors and three blocks (5.2), and strictly increasing over the 60 sextants (5.5).
 - `test/grid/repertoire.test.ts`: length 160, ascending, the excluded points in 6.2.
-- `test/grid/fold-text.test.ts`: every example in 7.3 to 7.9, including the exact failure `codePoints` for `"Łódź"` (`[0x141]`), `"a\tb"` (`[0x9]`), `"\uD800"` (`[0xD800]`) and a string with a repeated bad code point.
+- `test/grid/fold-text.test.ts`: every example in 7.3 to 7.9 and 7.14, including `"Łódź"` folding to `"Lódz"`, the exact failure `codePoints` for `"Ħ"` (`[0x126]`), `"a\tb"` (`[0x9]`), `"\uD800"` (`[0xD800]`) and a string with a repeated bad code point.
 - `test/grid/validate-grid.test.ts`: one minimal input per violation code, with its exact message; `null`, `undefined`, `"x"`, `{}` give only `not-array`; 0, 23 and 25 rows; rows of 39 and 41 cells (`col` 39 and 40); a sparse row `new Array(1_000_000)` gives 40 `cell-not-object` then `row-length` with `actual: 1000000`; a getter that throws, and a revoked Proxy, give `unreadable`; `cell-field-unknown` sorted by key, and a field name with a control character left out of the message; concealed blue-on-black text gives `contrast`; blue-on-black text spaces and mosaics are valid; arbitrary text in row 0 is valid (8.10); a cell with three problems gives them in the order of 9.1 to 9.10.
 - `test/grid/validate-content-rows.test.ts`: 19 and 21 rows (`row-count` at rows 21 and 22); content row 0 is reported as row 2; messages use `content`.
 - `test/grid/types.test.ts`: `@ts-expect-error` lines proving that `Grid` and `ContentRows` are not assignable to `ValidPage` or `ValidContent`, and that the two brands are not assignable to each other (2.4). The lines sit inside a function that is never called, and each comment names this spec.

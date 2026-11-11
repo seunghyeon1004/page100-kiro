@@ -20,9 +20,11 @@ Rows and columns are numbered from 0. "Page row" means a row number from 0 to 23
 ## Departures
 
 1. **Merged spec.** `kiro-workflow.md` plans `grid-core` and `page-markup` as two specs. This spec covers both, plus the project scaffold. Reason: the user asked for it, and nothing can be tested before the scaffold exists.
-2. **Folding, step 3.** `grid-rules.md` says to apply "NFD with combining marks stripped" to the whole string. Applied to the whole string, that step also strips accents from letters that are in the repertoire: `"café"` becomes `"cafe"` (checked in Node 24.5). This spec applies step 3 only to code points that are still outside the repertoire after step 2 (requirement 7.2). Needs the user's agreement before implementation; if agreed, `grid-rules.md` should be corrected to match.
-3. **Sextant example.** `grid-rules.md` says "`BLOCK SEXTANT-135` has bits 0, 2 and 4". Unicode has no such character: bits 0, 2 and 4 make v = 21, which maps to U+258C LEFT HALF BLOCK. This spec uses `BLOCK SEXTANT-235` (v = 22, bits 1, 2 and 4, U+1FB14) as the worked example. The mapping rule itself is unchanged. Suggest correcting the example in `grid-rules.md`.
+2. **Folding, step 3.** `grid-rules.md` says to apply "NFD with combining marks stripped" to the whole string. Applied to the whole string, that step also strips accents from letters that are in the repertoire: `"café"` becomes `"cafe"` (checked in Node 24.5). This spec applies step 3 only to code points that are still outside the repertoire after step 2 (requirement 7.2). Agreed by the owner. `grid-rules.md` is corrected to match.
+3. **Sextant example.** `grid-rules.md` says "`BLOCK SEXTANT-135` has bits 0, 2 and 4". Unicode has no such character: bits 0, 2 and 4 make v = 21, which maps to U+258C LEFT HALF BLOCK. This spec uses `BLOCK SEXTANT-235` (v = 22, bits 1, 2 and 4, U+1FB14) as the worked example. The mapping rule itself is unchanged. Corrected by the owner's answer: `grid-rules.md` now uses the v = 22 example. The mapping is checked by four anchor examples (requirement 5.2) and an order test (requirement 5.5). No Unicode data file is downloaded.
 4. **Row and column on whole-grid problems.** `grid-rules.md` invariant 3 says each violation has a row and a column, and "Page markup" says every parse error reports a row and a column. Some problems have no cell: the input is not an array, a row is not an array, a page has the wrong number of lines. For these, `row` and/or `col` is `null` (requirements 10.2 and 15.2) rather than a made-up coordinate.
+5. **Fixed replacement table.** `grid-rules.md` listed six fixed replacements. The owner added the entries of requirement 7.13 (`Ł`, `ł`, `Đ`, `đ`, `Œ`, `œ`, `ı`, the guillemets, four spaces, the soft hyphen, the dashes, the minus sign and the two prime marks). `grid-rules.md` is updated to match. Requirements 7.9 and 7.13 change to suit: `Ł`, `œ`, `ı`, `«`, U+2009 and U+202F now fold, so they leave the failing list.
+6. **Node engine.** Requirement 1.1 sets `"engines": { "node": ">=20.19.0" }`, agreed by the owner. `tech.md` says "Node 20 or later". The stricter range changes a product rule, so `tech.md` needs the owner's edit too. This spec does not change it.
 
 ## Decisions where the steering files are silent
 
@@ -36,7 +38,7 @@ Rows and columns are numbered from 0. "Page row" means a row number from 0 to 23
 
 **User story:** As a developer, I want a pinned, strict TypeScript project, so that every later spec can be built, linted and tested the same way on any machine.
 
-1.1 THE `package.json` file SHALL contain `"name": "page100"`, `"version": "0.1.0"`, `"private": true`, `"type": "module"`, `"license": "MIT"` and `"engines": { "node": ">=20" }`.
+1.1 THE `package.json` file SHALL contain `"name": "page100"`, `"version": "0.1.0"`, `"private": true`, `"type": "module"`, `"license": "MIT"` and `"engines": { "node": ">=20.19.0" }`.
 
 1.2 THE `package.json` file SHALL define exactly these scripts and no others: `build` = `tsc -p tsconfig.build.json`, `test` = `vitest run`, `typecheck` = `tsc --noEmit`, `lint` = `eslint . && prettier --check .`, `format` = `prettier --write .`.
 
@@ -124,7 +126,7 @@ Rows and columns are numbered from 0. "Page row" means a row number from 0 to 23
 
 7.1 THE function `foldText(input: string)` SHALL return either `{ ok: true, text }` or `{ ok: false, code: "fold-unrepresentable", codePoints }`, AND a failed result SHALL contain no text.
 
-7.2 THE function `foldText` SHALL apply these steps in this order: (1) NFC; (2) the fixed replacements U+2018 and U+2019 to `'`, U+201C and U+201D to `"`, U+2013 and U+2014 to `-`, U+2026 to `...`, U+00A0 to U+0020, U+00D7 to `x`; (3) each code point not in the repertoire is replaced by its NFD decomposition with every code point of General_Category Mark (`\p{M}`) removed; (4) NFC.
+7.2 THE function `foldText` SHALL apply these steps in this order: (1) NFC; (2) the fixed replacements of requirement 7.13, one code point at a time; (3) only to each code point that is still outside the repertoire after step 2, replace it by its NFD decomposition with every code point of General_Category Mark (`\p{M}`) removed (repertoire code points, including accented letters, keep their marks); (4) NFC.
 
 7.3 WHEN the input is the empty string, THE function `foldText` SHALL return `{ ok: true, text: "" }`.
 
@@ -138,13 +140,17 @@ Rows and columns are numbered from 0. "Page row" means a row number from 0 to 23
 
 7.8 WHEN the input contains a combining mark that does not compose with the code point before it, THE function `foldText` SHALL remove the mark (`"x\u0301"` becomes `"x"`).
 
-7.9 IF any code point is outside the repertoire after step 4, THEN THE function `foldText` SHALL fail, with `codePoints` listing each such code point once, in order of first appearance. This covers at least: letters with no canonical decomposition (U+0141 `Ł`, U+0110 `Đ`, U+0153 `œ`, U+0131 `ı`); other scripts (U+03B1 `α`, U+0434 `д`, U+4E2D); U+00F7 `÷`; symbols outside the repertoire (U+00A9 `©`, U+00AB `«`, U+00BD `½`, U+00A5 `¥`); control characters including U+0009, U+000A, U+000D and U+007F; spaces other than U+0020 and U+00A0 (U+2009, U+202F, U+200B); emoji (U+1F600); mosaic code points (U+2588, U+1FB00); private use (U+E000); and lone surrogates (U+D800, reported as 0xD800).
+7.9 IF any code point is outside the repertoire after step 4, THEN THE function `foldText` SHALL fail, with `codePoints` listing each such code point once, in order of first appearance. This covers at least: letters with no canonical decomposition that are not in the table of 7.13 (U+0126 `Ħ`, U+0166 `Ŧ`); other scripts (U+03B1 `α`, U+0434 `д`, U+4E2D); U+00F7 `÷`; symbols outside the repertoire (U+00A9 `©`, U+00B6 `¶`, U+00BD `½`, U+00A5 `¥`); control characters including U+0009, U+000A, U+000D and U+007F; spaces other than U+0020, U+00A0 and the spaces of 7.13 (U+200B); emoji (U+1F600); mosaic code points (U+2588, U+1FB00); private use (U+E000); and lone surrogates (U+D800, reported as 0xD800).
 
 7.10 THE function `foldText` SHALL never throw for any JavaScript string, including strings with lone surrogates.
 
 7.11 THE function `foldText` SHALL be idempotent: for every string s, IF `foldText(s)` returns `{ ok: true, text: t }`, THEN `foldText(t)` SHALL return `{ ok: true, text: t }`.
 
 7.12 WHEN `foldText` succeeds, every code point of its `text` SHALL be in the repertoire.
+
+7.13 THE fixed replacements of step 2 SHALL be exactly these, and no others: U+2018 and U+2019 to `'`; U+201C and U+201D to `"`; U+2013 and U+2014 to `-`; U+2026 to `...`; U+00A0 to U+0020; U+00D7 to `x`; U+0141 `Ł` to `L`; U+0142 `ł` to `l`; U+0110 `Đ` to `D`; U+0111 `đ` to `d`; U+0152 `Œ` to `OE`; U+0153 `œ` to `oe`; U+0131 `ı` to `i`; U+00AB `«` and U+00BB `»` to `"`; U+2002, U+2003, U+2009 and U+202F to U+0020; U+00AD (soft hyphen) to nothing; U+2010, U+2011 and U+2212 to `-`; U+2032 `′` to `'`; and U+2033 `″` to `"`.
+
+7.14 WHEN the input contains a code point from the table of 7.13, THE function `foldText` SHALL return its replacement in that place, so that `"Łódź"` becomes `"Lódz"`, `"Œuvre"` becomes `"OEuvre"`, `"1\u202F000"` becomes `"1 000"`, `"a\u00ADb"` becomes `"ab"` and `"5\u2212 3"` becomes `"5- 3"`.
 
 ## Requirement 8: validateGrid
 

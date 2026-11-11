@@ -1,0 +1,6 @@
+dist/
+coverage/
+package-lock.json
+.kiro/
+docs/
+test/fixtures/

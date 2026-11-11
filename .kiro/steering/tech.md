@@ -6,10 +6,10 @@ inclusion: always
 
 ## Stack
 
-- Node 20 or later. TypeScript with `"strict": true` and `"noUncheckedIndexedAccess": true`. ES modules only (`"type": "module"`, `"module": "NodeNext"`). No CommonJS and no `require`.
+- Node 20.19 or later. TypeScript with `"strict": true` and `"noUncheckedIndexedAccess": true`. ES modules only (`"type": "module"`, `"module": "NodeNext"`). No CommonJS and no `require`.
 - The HTTP server is `node:http`, with `node:zlib` for brotli and gzip. No web framework.
 - Deployed from a `Dockerfile` to Render's free plan.
-- Font: Bedstead (CC0), subset to the repertoire in `grid-rules.md`, committed as a file under `public/`.
+- Font: Bedstead Extended (public domain dedication by its author, Ben Harris), subset to the repertoire in `grid-rules.md`, committed as a file under `public/`.
 
 ## Dependencies
 

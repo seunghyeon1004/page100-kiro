@@ -92,7 +92,7 @@ Any other number shows a "page not in service" screen with the nearest pages, an
 
 ## Front end
 
-- The screen keeps a 4:3 shape and scales to the viewport. Text is real text in an openly licensed teletext-style font (Bedstead, CC0), subset to the repertoire.
+- The screen keeps a 4:3 shape and scales to the viewport. Text is real text in an openly licensed teletext-style font (Bedstead Extended, released into the public domain by its author), subset to the repertoire.
 - Keyboard: digits enter a page number, left and right for previous and next page, up and down for subpages, H hold, R reveal, T text view, I index, and the four colour keys.
 - Phone: a number pad under the screen with the same functions. Touch targets at least 44 px.
 - Subpages rotate on a timer. Hold stops them. Reduced-motion users get no automatic rotation.
