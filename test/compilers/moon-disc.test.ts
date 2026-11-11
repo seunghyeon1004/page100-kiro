@@ -9,7 +9,7 @@ function discPixels(): number {
   let count = 0;
   for (let y = 0; y < 18; y++) {
     for (let x = 0; x < 16; x++) {
-      const u = (x + 0.5 - 8) / 7.5;
+      const u = (x + 0.5 - 8) / 8;
       const v = (y + 0.5 - 9) / 9;
       if (u * u + v * v <= 1) count++;
     }

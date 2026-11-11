@@ -37,6 +37,8 @@ export type DelayFn = (ms: number, signal: AbortSignal) => Promise<void>;
 export interface HttpClientDeps {
   readonly fetch: FetchFn;
   readonly delay: DelayFn;
+  /** The User-Agent to send; defaults to `USER_AGENT` (server-and-viewer 5.9). */
+  readonly userAgent?: string;
 }
 
 export interface RequestOptions {
@@ -164,7 +166,7 @@ export function createHttpClient(deps: HttpClientDeps): HttpClient {
         .then(() =>
           deps.fetch(url, {
             method: "GET",
-            headers: { Accept: "application/json", "User-Agent": USER_AGENT },
+            headers: { Accept: "application/json", "User-Agent": deps.userAgent ?? USER_AGENT },
             credentials: "omit",
             redirect: "follow",
             signal: abort.signal,

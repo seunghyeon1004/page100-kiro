@@ -23,7 +23,7 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 1. **Imports.** `structure.md` lets `src/editor` import `src/grid`, `src/markup` and `src/sources` types. It also imports `src/compilers` (the seam functions) and `src/pages` (`REGISTRY`, `checkCompiledPage`, `buildScreen`), as rule-compilers Departure 1 did for compilers.
 2. **Files outside `src/editor`.** This spec writes `scripts/record-editor-fixtures.ts` and its helpers, and reads `test/fixtures/editor/` in tests. It writes no `src/server` file (owner answer 2).
-3. **New variables.** `tech.md` lists four variables. The server spec will read them and pass `EditorSettings`; it also reads `EDITOR_MAX_CALLS_PER_BOOT` (default 30, decided by the owner) and `EDITOR_CLIENT` (`auto` or `fixtures`, the offline mode), and sets `MAX_MODEL_CALLS_PER_DAY` to 60. `tech.md` needs the owner's edit to list them.
+3. **New variables.** `tech.md` lists four variables. The server spec will read them and pass `EditorSettings`; it also reads `EDITOR_MAX_CALLS_PER_BOOT` (default 30, decided by the owner) and `EDITOR_CLIENT` (`anthropic`, `fixtures` or `off`; first written as `auto` or `fixtures`), and sets `MAX_MODEL_CALLS_PER_DAY` to 60. `tech.md` needs the owner's edit to list them.
 4. **Developer news.** `product.md` says the AI may shorten titles on 400 to 402. The rule-compilers spec treats those titles as names that are never shortened, and the owner's AI page list leaves them out. They stay rules-only.
 5. **Scaffold lists.** pages-and-sources 1.1 fixes `dependencies` to `zod` only. This spec adds `@anthropic-ai/sdk` 1.8.0, and `test/scaffold.test.ts` checks the new exact list.
 6. **Environment read in a script.** `structure.md` says environment variables are read only in `src/server/config.ts`, which this spec does not create. `scripts/record-editor-fixtures.ts` therefore reads `ANTHROPIC_API_KEY`, `EDITOR_MODEL`, `MAX_MODEL_CALLS_PER_DAY` and `EDITOR_MAX_CALLS_PER_BOOT` itself (requirement 14.5), only when the owner runs it. The server spec may replace this with its own settings loader.
@@ -49,13 +49,13 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 ## Requirement 2: Settings
 
-~~2.1 THE module `src/server/config.ts` SHALL export `loadConfig(env)` ...~~ Removed (owner answer 2).
+~~2.1 THE module `src/server/config.ts` SHALL export `loadConfig(env)` ...~~ Removed (owner answer 2). Now requirement 2 of server-and-viewer, which also adds `EDITOR_BOOT_DELAY_MS` and `EDITOR_MIN_INTERVAL_MS`.
 
-~~2.2 THE config SHALL hold ...~~ Removed (owner answer 2); the fields move to 2.4.
+~~2.2 THE config SHALL hold ...~~ Removed (owner answer 2); the fields move to 2.4. See server-and-viewer 2.2.
 
-~~2.3 IF a variable is invalid ...~~ Removed (owner answer 2).
+~~2.3 IF a variable is invalid ...~~ Removed (owner answer 2). See server-and-viewer 2.3.
 
-2.4 THE module `src/editor/editor-types.ts` SHALL export `EditorSettings`, holding `anthropicApiKey` (`string` or `null`), `editorModel` (`string`), `maxModelCallsPerDay` (integer), `editorMaxCallsPerBoot` (integer) and `editorClient` (`auto` or `fixtures`), AND every function of `src/editor` that needs a setting SHALL take it as an argument.
+2.4 THE module `src/editor/editor-types.ts` SHALL export `EditorSettings`, holding `anthropicApiKey` (`string` or `null`), `editorModel` (`string`), `maxModelCallsPerDay` (integer), `editorMaxCallsPerBoot` (integer) and `editorClient` (`anthropic`, `fixtures` or `off`; was `auto` or `fixtures`, changed by server-and-viewer Departure 5), AND every function of `src/editor` that needs a setting SHALL take it as an argument.
 
 2.5 THE module `src/editor` SHALL not read the environment and SHALL not validate settings beyond what its own types require; reading and validating them belongs to the server spec.
 
@@ -67,7 +67,7 @@ Spec for `src/editor`, the only module that calls a model: the editor client int
 
 3.3 A `DraftResult` SHALL be `{ ok: true, rows, requests }` or `{ ok: false, reason, status, requests }`, where `requests` is the number of calls made and `status` is an HTTP status or `null`.
 
-3.4 THE function `createEditorClient(settings, fetch, fixtures)` SHALL return `null` and construct no SDK client WHILE `anthropicApiKey` is `null` and `editorClient` is `auto`, `null` WHILE `editorClient` is `fixtures` and `fixtures` is empty, a `FixtureEditorClient` WHEN `editorClient` is `fixtures` and `fixtures` is not empty (key ignored), and an `AnthropicEditorClient` otherwise.
+3.4 THE function `createEditorClient(settings, fetch, fixtures)` SHALL return `null` and construct no SDK client WHILE `anthropicApiKey` is `null` and `editorClient` is `anthropic`, `null` WHILE `editorClient` is `off`, `null` WHILE `editorClient` is `fixtures` and `fixtures` is empty, a `FixtureEditorClient` WHEN `editorClient` is `fixtures` and `fixtures` is not empty (key ignored), and an `AnthropicEditorClient` otherwise.
 
 ## Requirement 4: Anthropic client request
 

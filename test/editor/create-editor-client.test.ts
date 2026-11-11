@@ -11,7 +11,7 @@ const SETTINGS: EditorSettings = {
   editorModel: "test-model",
   maxModelCallsPerDay: 60,
   editorMaxCallsPerBoot: 30,
-  editorClient: "auto",
+  editorClient: "anthropic",
 };
 
 const FIXTURE = EditorFixture.parse({
@@ -27,7 +27,7 @@ const FIXTURE = EditorFixture.parse({
 describe("createEditorClient (requirement 3.4)", () => {
   const { fetch, calls } = fakeFetch([]);
 
-  it("returns null for auto without a key, and for an empty key", () => {
+  it("returns null for anthropic without a key, and for an empty key", () => {
     expect(createEditorClient(SETTINGS, fetch, [])).toBeNull();
     expect(createEditorClient({ ...SETTINGS, anthropicApiKey: "" }, fetch, [])).toBeNull();
   });
@@ -51,10 +51,16 @@ describe("createEditorClient (requirement 3.4)", () => {
     ).toBeInstanceOf(FixtureEditorClient);
   });
 
-  it("returns an AnthropicEditorClient for auto with a key, even when fixtures exist", () => {
+  it("returns an AnthropicEditorClient for anthropic with a key, even when fixtures exist", () => {
     const client = createEditorClient({ ...SETTINGS, anthropicApiKey: "k" }, fetch, [FIXTURE]);
     expect(client).toBeInstanceOf(AnthropicEditorClient);
     expect(client?.maxRequestsPerDraft).toBe(2);
+  });
+
+  it("returns null for off, whatever the key and the fixtures (server-and-viewer Departure 5)", () => {
+    const off = { ...SETTINGS, editorClient: "off" as const, anthropicApiKey: "k" };
+    expect(createEditorClient(off, fetch, [FIXTURE])).toBeNull();
+    expect(createEditorClient(off, fetch, [])).toBeNull();
   });
 
   it("makes no request while building any client", () => {

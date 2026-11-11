@@ -137,7 +137,7 @@ interface ContentBuilder {
 - `rangeBars(ranges, cols, rows)`: bar i of n covers x from floor(i W / n) + 1 to floor((i + 1) W / n) - 2 and y from the scaled high to the scaled low (same scale over all highs and lows).
 - WMO codes: 0, 1 `clear`; 2, 3 `cloud`; 45, 48 `fog`; 51 to 57, 61 to 67, 80 to 82 `rain`; 71 to 77, 85, 86 `snow`; 95 to 99 `storm`; anything else `null`. Labels: `Clear`, `Cloudy`, `Fog`, `Rain`, `Snow`, `Storm`, `n/a`.
 - Symbols, 6 × 6 pixels (`#` on, rows top to bottom), drawn as 3 × 2 cells: clear (yellow) `..##../.####./######/######/.####./..##..`; cloud (white) `....../..##../.####./######/######/......`; rain (cyan) `.####./######/....../#.#.#./.#.#.#/#.#.#.`; snow (white) `.####./######/....../#..#../..#..#/#..#..`; storm (yellow) `.####./######/...#../..##../.##.../.#....`; fog (white) `######/....../######/....../######/......`.
-- Moon disc: 8 × 6 cells (16 × 18 pixels). Pixel (x, y) has u = (x + 0.5 - 8) / 7.5 and v = (y + 0.5 - 9) / 9 (equal radii on a 4:3 screen), is on the disc when u² + v² ≤ 1, and is lit when, with s = (1 - 2f) √(1 - v²), u > s (waxing) or u < -s (waning). White.
+- Moon disc: 8 × 6 cells (16 × 18 pixels). Pixel (x, y) has u = (x + 0.5 - 8) / 8 and v = (y + 0.5 - 9) / 9 (equal radii on the 5:4 screen: a cell is 0.75em by 1em, so a pixel is 0.375em by 0.333em, and 8 × 0.375 = 9 × 0.333 = 3em; changed from 7.5 on 2026-11-11, server-and-viewer Owner decisions 2), is on the disc when u² + v² ≤ 1, and is lit when, with s = (1 - 2f) √(1 - v²), u > s (waxing) or u < -s (waning). White.
 - Block font: `GLYPHS` maps each of the 36 characters to 7 strings of 5 `#`/`.`; space is 5 columns off. Glyph n starts at x = 6n, y = 1, on a canvas of 3 rows.
 
 ## Moon

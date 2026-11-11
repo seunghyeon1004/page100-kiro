@@ -60,11 +60,11 @@ export interface EditorClient {
 export const DraftReply = z.object({ rows: z.array(z.string()) });
 export type DraftReply = z.infer<typeof DraftReply>;
 
-/** The settings the server spec builds from the environment (requirement 2.4). */
+/** The settings the server spec builds from the environment (requirement 2.4; `off` and `anthropic` per server-and-viewer Departure 5). */
 export interface EditorSettings {
   readonly anthropicApiKey: string | null;
   readonly editorModel: string;
   readonly maxModelCallsPerDay: number;
   readonly editorMaxCallsPerBoot: number;
-  readonly editorClient: "auto" | "fixtures";
+  readonly editorClient: "anthropic" | "fixtures" | "off";
 }

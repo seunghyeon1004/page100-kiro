@@ -78,7 +78,7 @@ type DraftResult =
   | { readonly ok: false; readonly reason: DraftFailureReason; readonly status: number | null; readonly requests: number };
 interface EditorClient { readonly maxRequestsPerDraft: number; draft(request: DraftRequest): Promise<DraftResult> }
 const DraftReply = z.object({ rows: z.array(z.string()) });
-interface EditorSettings { readonly anthropicApiKey: string | null; readonly editorModel: string; readonly maxModelCallsPerDay: number; readonly editorMaxCallsPerBoot: number; readonly editorClient: "auto" | "fixtures" }
+interface EditorSettings { readonly anthropicApiKey: string | null; readonly editorModel: string; readonly maxModelCallsPerDay: number; readonly editorMaxCallsPerBoot: number; readonly editorClient: "anthropic" | "fixtures" | "off" }
 interface EditorDeps { readonly client: EditorClient; readonly budget: CallBudget; readonly cache: DraftCache; readonly log: (line: string) => void }
 interface PageJob { readonly input: EditorialInput; readonly rules: DraftRows; readonly publish: (rows: DraftRows, editor: "ai" | "rules") => PublishResult }
 type PublishResult = { readonly ok: true; readonly page: CompiledPage } | { readonly ok: false; readonly problems: NonEmpty<CompileProblem> };
@@ -95,7 +95,7 @@ type EditionOutcome = { readonly number: number; readonly editor: "ai" | "rules"
 interface EditionResult { readonly pages: readonly CompiledPage[]; readonly outcomes: readonly EditionOutcome[]; readonly status: EditorStatus }
 ```
 
-`optional` is true for a slot to which the rules draft gives zero rows. `EditorSettings` is defined in `src/editor` so the editor never imports `src/server`; the server spec builds it from the environment. `createEditorClient(settings, fetch, fixtures)` returns `null` for `auto` without a key and for `fixtures` with an empty list; the server passes `[]` when `test/fixtures/editor/` is missing, and that directory is not copied into the Docker image.
+`optional` is true for a slot to which the rules draft gives zero rows. `EditorSettings` is defined in `src/editor` so the editor never imports `src/server`; the server spec builds it from the environment. `createEditorClient(settings, fetch, fixtures)` returns `null` for `off`, for `anthropic` without a key and for `fixtures` with an empty list; the server passes `[]` when `test/fixtures/editor/` is missing, and that directory is not copied into the Docker image.
 
 ## AI pages
 
@@ -214,7 +214,7 @@ Property 8: for all generated snapshots and per-page scripted clients, `runEditi
 - `check-editor-draft.test.ts`: one minimal reply per sentence in the table, exact text; an optional empty slot passes; a folded `…` counts as 3 cells.
 - `system-prompt.test.ts`: contains the untrusted-data sentence and both abbreviation lists verbatim, and no digit other than the 40 of "40-column".
 - `name-check.test.ts`: first word of a row, word after `. `, allowed abbreviation, source word in another case, a missing name reported once.
-- `call-budget.test.ts`, `draft-cache.test.ts`, `fixture-editor-client.test.ts` (fixtures are built in the test and parsed with `EditorFixture`; they are scripted, not recordings), `create-editor-client.test.ts` (no key and `auto` returns `null`; `fixtures` with an empty list returns `null`; `fixtures` with one fixture returns a `FixtureEditorClient`).
+- `call-budget.test.ts`, `draft-cache.test.ts`, `fixture-editor-client.test.ts` (fixtures are built in the test and parsed with `EditorFixture`; they are scripted, not recordings), `create-editor-client.test.ts` (no key and `anthropic` returns `null`; `off` returns `null` even with a key; `fixtures` with an empty list returns `null`; `fixtures` with one fixture returns a `FixtureEditorClient`).
 - `run-edition.test.ts`: on the boot snapshot with a client that always fails, every page equals the page `compileAll` gives; with a client that echoes the rules draft, every page is `ai`.
 - `recorded-fixtures.test.ts` (skipped with a stated reason while `test/fixtures/editor/` has no fixture file; live once the owner records, task 14): every file in `test/fixtures/editor/` parses with `EditorFixture`, contains no `sk-ant-`, `x-api-key` or `authorization`, and replays through `FixtureEditorClient` and `runEdition` on the boot snapshot.
 

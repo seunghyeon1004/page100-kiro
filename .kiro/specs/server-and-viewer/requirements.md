@@ -14,10 +14,10 @@ Spec for `src/server` (configuration, boot, store, scheduler, renderers, router,
 ## Departures
 
 1. **Merged spec.** `kiro-workflow.md` plans `server`, `frontend` and `deploy` as three specs. The owner merged them; the renderers, the client and the budgets cannot be tested apart.
-2. **Screen shape 5:4.** `frontend.md` ("Layout") and the brief say 4:3. Bedstead Extended advances 0.75em; with `line-height: 1` the 40 x 24 screen is 30em by 24em, 5:4 (`public/fonts/README.md`). Decided by the owner. The rule-compilers moon disc assumes 4:3 (open question 2).
+2. **Screen shape 5:4.** `frontend.md` ("Layout") and the brief say 4:3. Bedstead Extended advances 0.75em; with `line-height: 1` the 40 x 24 screen is 30em by 24em, 5:4 (`public/fonts/README.md`). Decided by the owner. The rule-compilers moon disc assumed 4:3; the owner changed its divisor from 7.5 to 8 (Owner decisions, 2).
 3. **Budgets lowered.** `frontend.md` allows lowering freely. Requirement 14.1 sets the new values; task 1 writes them into `frontend.md`.
 4. **Local clock.** `grid-rules.md` row 0 is a UTC clock. The server renders UTC; once the script runs it shows the viewer's local time in the same format (owner decision). Content times stay UTC.
-5. **Configuration moves here.** ai-editor requirements 2.1 to 2.3 move to requirement 2 (struck there by task 1). `EDITOR_CLIENT` becomes `anthropic | fixtures | off`, default `anthropic`; `anthropic` without a key means no client, as ai-editor's `auto` did, so ai-editor 3.4 and `EditorConfig` change to match. New variables `REFRESH` and `PUBLIC_ORIGIN`; `tech.md`'s table needs the owner's edit.
+5. **Configuration moves here.** ai-editor requirements 2.1 to 2.3 move to requirement 2 (struck there by task 1). `EDITOR_CLIENT` becomes `anthropic | fixtures | off`, default `anthropic`; `anthropic` without a key means no client, as ai-editor's `auto` did, so ai-editor 3.4 and `EditorConfig` change to match. New variables `REFRESH`, `PUBLIC_ORIGIN`, `EDITOR_BOOT_DELAY_MS` and `EDITOR_MIN_INTERVAL_MS` (Owner decisions, 1); `tech.md`'s table needs the owner's edit.
 6. **`typecheck` script.** `tech.md` gives `tsc --noEmit`. It becomes `tsc --noEmit && tsc -p public/tsconfig.json`, so `app.js` is checked too.
 7. **Favicon.** `frontend.md` says "no images anywhere". `/favicon.svg` is one small SVG written in code (owner decision); without it Chromium requests `/favicon.ico` and logs a 404.
 8. **Reveal selector.** `frontend.md` gives `#reveal:checked ~ .screen .conceal`. The checkbox sits outside the swapped region, so the rule is `#reveal:checked ~ .view .conceal`. Same mechanism, no script.
@@ -32,7 +32,16 @@ Spec for `src/server` (configuration, boot, store, scheduler, renderers, router,
 - Hold and Reveal reset on a page change; the text view stays open.
 - Links inside the text alternative navigate normally, so the script never removes a focused control.
 - `EDITOR_CLIENT=fixtures` reads `test/fixtures/editor/*.json` at boot; the Docker image has none, so it publishes rules pages.
-- `.env.example` is printed by `scripts/env-example.ts` and written by the owner, because `tech.md` rule 2 and the planned guard hook stop Kiro from touching `.env*` paths.
+- `.env.example` is written by Kiro directly: `tech.md` rule 2 exempts that one name (Owner decisions, 3). It holds variable names, comments and defaults only.
+
+## Owner decisions (2026-11-11)
+
+Recorded before the design and tasks were adjusted. They amend requirements 2, 6 and 16 below; amended criteria are struck through in place and replaced by a new number at the end of their requirement.
+
+1. **Model-call cap on a host that restarts.** A free host sleeps and restarts, and every restart empties the in-memory budget and draft cache. So the editor is gated in time as well as by count. New variable `EDITOR_BOOT_DELAY_MS` (default 600000): the first edition after boot runs only once the process has been up that long, so a short wake that goes back to sleep spends nothing. New variable `EDITOR_MIN_INTERVAL_MS` (default 10800000, 3 hours): after that, editions that may call the model start at most that far apart, and only for pages whose input changed. Both existing caps stay (`MAX_MODEL_CALLS_PER_DAY`, `EDITOR_MAX_CALLS_PER_BOOT`). **The daily cap is per process**: a restart resets its count, so the real bound on a host that restarts is the per-boot cap times the number of boots, and the delay is what keeps a short wake at zero. Requirements 2.5, 6.6 to 6.9.
+2. **Moon disc.** The divisor of `u` in `src/compilers/moon-disc.ts` changes from 7.5 to 8 so the disc is round on the 5:4 screen. Its tests and the rule-compilers design line are updated (task 1).
+3. **`.env.example`** is exempt by name from the secrets rule of `tech.md` (rule 2 is updated). Kiro writes it directly, with names, comments and defaults, and no value that looks like a key. Requirement 16.3.
+4. **Install.** Kiro may run the `npm install` of the design's Toolchain section; npm network use only.
 
 ## Requirement 1: Project changes and boundaries
 
@@ -59,6 +68,8 @@ Spec for `src/server` (configuration, boot, store, scheduler, renderers, router,
 2.3 IF a variable is invalid, THEN THE result SHALL hold one problem per variable that names it and its rule (`PORT must be an integer from 1 to 65535`) and contains no variable's value.
 
 2.4 NO log line, response body or response header of the server SHALL contain the value of `ANTHROPIC_API_KEY`.
+
+2.5 THE config SHALL also hold `editorBootDelayMs` (`EDITOR_BOOT_DELAY_MS`, integer 0 to 86,400,000, default 600,000) and `editorMinIntervalMs` (`EDITOR_MIN_INTERVAL_MS`, integer 0 to 604,800,000, default 10,800,000), AND `ENV_VARIABLES` SHALL list them after `EDITOR_MAX_CALLS_PER_BOOT` (Owner decisions, 1).
 
 ## Requirement 3: Boot and shutdown
 
@@ -110,15 +121,23 @@ Spec for `src/server` (configuration, boot, store, scheduler, renderers, router,
 
 **User story:** As a reader, I want the edited pages when a key is set, without slowing any request.
 
-6.1 WHEN the boot pages are published, and after each successful `wikimedia-feed` or `wikimedia-onthisday` fetch, THE scheduler SHALL start an edition in the background WHERE an editor client exists.
+~~6.1 WHEN the boot pages are published, and after each successful `wikimedia-feed` or `wikimedia-onthisday` fetch, THE scheduler SHALL start an edition in the background WHERE an editor client exists.~~ Replaced by 6.6 and 6.7.
 
-6.2 THE scheduler SHALL run at most one edition at a time, AND a trigger during an edition SHALL cause exactly one more edition after it ends.
+6.2 THE scheduler SHALL run at most one edition at a time, AND a trigger during an edition SHALL cause exactly one more edition after it ends, no earlier than 6.6 allows.
 
 6.3 THE scheduler SHALL publish a page an edition returns only WHILE the `fetchedAt` of the source it was built from is unchanged since the edition started, AND SHALL recompile and publish page 802 after each edition and each successful fetch with the status mapped as the ai-editor design gives it.
 
 6.4 THE app SHALL create one call budget (`maxModelCallsPerDay`, `editorMaxCallsPerBoot`) and one draft cache per process, AND SHALL pass the global `fetch` to `createEditorClient`.
 
 6.5 THE scheduler SHALL log one line per edition and forward the editor's own lines unchanged.
+
+6.6 WHERE the editor client is `anthropic` and `refresh` is `on`, THE first edition SHALL start only when the process has been up `editorBootDelayMs`, AND each later edition SHALL start at least `editorMinIntervalMs` after the start of the one before; a trigger earlier than that SHALL be held until then (one timer) and run once.
+
+6.7 THE scheduler SHALL start an edition only when a trigger (the boot, or a successful `wikimedia-feed` or `wikimedia-onthisday` fetch) has come since the last one started, AND the draft cache (ai-editor 11) SHALL make a call only for a page whose input changed.
+
+6.8 WHEN a `wikimedia-feed` or `wikimedia-onthisday` fetch succeeds and an editor client exists, THE scheduler SHALL, before publishing, run a pass with a budget that refuses every call, so a page whose input is unchanged keeps its cached AI text and no call is made; a page that pass leaves as `rules` publishes as `compileAll` returned it.
+
+6.9 WHERE the editor client is `fixtures`, THE scheduler SHALL apply no delay and no interval and run an edition at boot even WHILE `refresh` is `off`, AND WHERE it is `anthropic` and `refresh` is `off`, SHALL run none.
 
 ## Requirement 7: Routes
 
@@ -262,7 +281,7 @@ Spec for `src/server` (configuration, boot, store, scheduler, renderers, router,
 
 16.2 THE `.dockerignore` SHALL exclude at least `node_modules`, `dist`, `.git`, `.env`, `.env.*`, `test`, `docs` and `.kiro`.
 
-16.3 THE `render.yaml` SHALL define one `web` service with `runtime: docker`, `plan: free`, `healthCheckPath: /api/health`, `ANTHROPIC_API_KEY` and `PUBLIC_ORIGIN` with `sync: false`, and every other variable of `ENV_VARIABLES` with its default, AND `scripts/env-example.ts` SHALL print one `NAME=default` line per variable, with an empty key.
+16.3 THE `render.yaml` SHALL define one `web` service with `runtime: docker`, `plan: free`, `healthCheckPath: /api/health`, `ANTHROPIC_API_KEY` and `PUBLIC_ORIGIN` with `sync: false`, and every other variable of `ENV_VARIABLES` with its default, AND the file `.env.example`, written by Kiro (Owner decisions, 3), SHALL hold one comment and one `NAME=default` line per variable of `ENV_VARIABLES`, in order, with an empty key; `scripts/env-example.ts` SHALL print the same text, AND a test SHALL fail unless the two are equal.
 
 16.4 THE module `scripts/lib/runtime-copies.ts` SHALL export `RUNTIME_COPIES`, AND a test SHALL fail unless the runtime stage's `COPY` lines are exactly that list in order.
 

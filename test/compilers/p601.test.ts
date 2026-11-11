@@ -17,12 +17,12 @@ describe("page 601 (requirement 15.2)", () => {
       THE MOON TONIGHT                        
        Waxing crescent                        
                                               
-                 5% illuminated               
-             🬁🬏                               
-              🬀  Next full moon               
-              🬏  Tue 24 Nov 14:54 UTC         
-             🬞🬀  Next new moon                
-                 Wed 09 Dec 00:53 UTC         
+            🬀🬞   5% illuminated               
+              🬃                               
+              ▐  Next full moon               
+              ▐  Tue 24 Nov 14:54 UTC         
+              🬃  Next new moon                
+            🬏🬁   Wed 09 Dec 00:53 UTC         
                                               
                                               
        Times are computed here and may differ 

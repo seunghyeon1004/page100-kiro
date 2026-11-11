@@ -48,7 +48,7 @@ Tests never make network calls. A test that needs the network is a bug.
 ## Rules for Kiro and for reviewers
 
 1. Keep commits small: one task or one fix each. Suggest a commit message, but **never run `git add`, `git commit`, `git push`** or any other command that stages, commits or pushes. The user does that.
-2. **Never read or print any file outside this repository.** That includes the parent directories (`../`, `~/hackathons-2026/`, home) and any `.env`, `.env.*`, key, token or secrets file, inside or outside the repository. Do not `cat`, `ls`, grep or glob them. If a task seems to need one, stop and ask.
+2. **Never read or print any file outside this repository.** That includes the parent directories (`../`, `~/hackathons-2026/`, home) and any `.env`, `.env.*`, key, token or secrets file, inside or outside the repository. Do not `cat`, `ls`, grep or glob them. If a task seems to need one, stop and ask. One exception, by name: `.env.example` is a template that holds variable names, comments and defaults, never a key, and Kiro may read and write it directly.
 3. **Never weaken a validator, schema or test to make something pass.** Fix the code or the data. If a rule itself is wrong, say so and get the user's agreement before changing it.
 4. **Never mock the thing a test is meant to prove.** A validator test calls the real validator. A parser round-trip test uses the real parser and serialiser. Source parsing tests use recorded fixtures, not hand-made objects that skip the zod schema.
 5. **Tick a task only after running the command that proves it**, and quote that command and its result in the task update (for example `npm test -- test/grid` with "38 passed").

@@ -60,7 +60,7 @@ function settingsFrom(env: Env): Parsed {
       editorModel: model === undefined || model === "" ? DEFAULT_MODEL : model,
       maxModelCallsPerDay: perDay,
       editorMaxCallsPerBoot: perBoot,
-      editorClient: "auto",
+      editorClient: "anthropic",
     },
   };
 }

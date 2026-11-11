@@ -9,13 +9,18 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/server/main.ts",
+    "start": "node dist/server/main.js",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p public/tsconfig.json",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "grid:check": "tsx scripts/grid-check.ts"
+    "e2e": "playwright test",
+    "grid:check": "tsx scripts/grid-check.ts",
+    "payload": "tsx scripts/payload.ts"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@types/node": "20.19.43",
     "eslint": "10.14.0",
     "fast-check": "4.10.2",

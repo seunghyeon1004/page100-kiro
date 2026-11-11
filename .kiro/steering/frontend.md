@@ -67,7 +67,7 @@ Every key action is also a visible control, so nothing works only from the keybo
 
 ## Layout
 
-- The screen keeps a 4:3 aspect ratio and scales to the viewport without horizontal scrolling down to 320 CSS px wide.
+- The screen keeps a 5:4 aspect ratio (40 x 24 cells of 0.75em by 1em; server-and-viewer Departure 2) and scales to the viewport without horizontal scrolling down to 320 CSS px wide.
 - Text is real text in the Bedstead subset font. No images anywhere (the brief puts images out of scope).
 - Colours come only from the eight values in `grid-rules.md`, through classes. HTML never contains `style` attributes, because the CSP forbids them.
 
@@ -77,12 +77,12 @@ Every key action is also a visible control, so nothing works only from the keybo
 
 | Item | Budget |
 |---|---|
-| First load: HTML, CSS, JS and font for `/100`, brotli | 64 KiB total |
-| Any page's HTML document, brotli | 8 KiB |
+| First load: HTML, CSS, JS, font and favicon for `/100`, brotli where served so | 24 KiB total |
+| Any page's HTML document, brotli | 6 KiB |
 | Any `/:page.frag`, brotli | 4 KiB |
 | `public/` client script, uncompressed | 12 KiB |
-| CSS, uncompressed | 8 KiB |
-| Font subset (woff2) | 32 KiB |
+| CSS, uncompressed | 6 KiB |
+| Font subset (woff2) | 6 KiB |
 
 Static assets get long-lived `Cache-Control` with content-hashed names. Pages get ETags and short caching.
 

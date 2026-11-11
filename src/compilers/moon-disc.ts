@@ -7,7 +7,7 @@ export const MOON_COLS = 8;
 export const MOON_ROWS = 6;
 
 /**
- * The disc, 16 x 18 pixels. Pixel (x, y) has u = (x + 0.5 - 8) / 7.5 and v = (y + 0.5 - 9) / 9, is
+ * The disc, 16 x 18 pixels. Pixel (x, y) has u = (x + 0.5 - 8) / 8 and v = (y + 0.5 - 9) / 9, is
  * on the disc when u^2 + v^2 <= 1, and is lit when u > s (waxing) or u < -s (waning), with
  * s = (1 - 2f) * sqrt(1 - v^2). `fraction` is clamped to 0 to 1.
  */
@@ -16,7 +16,7 @@ export function moonDisc(fraction: number, waxing: boolean): Canvas {
   const canvas = createCanvas(MOON_COLS, MOON_ROWS);
   for (let y = 0; y < 3 * MOON_ROWS; y++) {
     for (let x = 0; x < 2 * MOON_COLS; x++) {
-      const u = (x + 0.5 - 8) / 7.5;
+      const u = (x + 0.5 - 8) / 8;
       const v = (y + 0.5 - 9) / 9;
       if (u * u + v * v > 1) continue;
       const s = (1 - 2 * f) * Math.sqrt(1 - v * v);

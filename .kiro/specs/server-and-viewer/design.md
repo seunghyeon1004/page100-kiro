@@ -1,6 +1,22 @@
 # server-and-viewer: design
 
-Requirements: `requirements.md`. Contracts: `frontend.md`, `grid-rules.md`, `sources.md`, `tech.md`, and the pages-and-sources, rule-compilers and ai-editor designs. Existing code used: `validateGrid`, `serialisePage`, `parseContent`, `validateContentRows`, `mosaicCodePoint`, `REPERTOIRE`, `COLOUR_RGB`, `COLOUR_LETTER`, `REGISTRY`, `findPage`, `lookupPage`, `previousInService`, `nextInService`, `buildScreen`, `checkCompiledPage`, `notInServicePage`, `formatHeaderClock`, `formatUtcTime`, `ATTRIBUTION`, `SCHEDULE`, `JITTER_FRACTION`, `isStale`, `FETCHERS`, `createHttpClient`, `realDelay`, `USER_AGENT`, `parseSnapshot`, `SOURCE_IDS`. From specs being implemented, used as their designs give them: `compileAll`, `compile802`, `ServiceStatus`, `PageFiles` (rule-compilers); `runEdition`, `emptyEditorStatus`, `EditorStatus`, `createEditorClient`, `createCallBudget`, `createDraftCache`, `EditorFixture`, `EditorConfig` (ai-editor).
+Requirements: `requirements.md`. Contracts: `frontend.md`, `grid-rules.md`, `sources.md`, `tech.md`, and the pages-and-sources, rule-compilers and ai-editor designs. Existing code used: `validateGrid`, `serialisePage`, `parseContent`, `validateContentRows`, `mosaicCodePoint`, `REPERTOIRE`, `COLOUR_RGB`, `COLOUR_LETTER`, `REGISTRY`, `findPage`, `lookupPage`, `previousInService`, `nextInService`, `buildScreen`, `checkCompiledPage`, `notInServicePage`, `formatHeaderClock`, `formatUtcTime`, `ATTRIBUTION`, `SCHEDULE`, `JITTER_FRACTION`, `isStale`, `FETCHERS`, `createHttpClient`, `realDelay`, `USER_AGENT`, `parseSnapshot`, `SOURCE_IDS`. From specs being implemented, used as their designs give them: `compileAll`, `compile802`, `ServiceStatus`, `PageFiles` (rule-compilers); `runEdition`, `emptyEditorStatus`, `EditorStatus`, `createEditorClient`, `createCallBudget`, `createDraftCache`, `EditorFixture`, `EditorSettings` (ai-editor).
+
+## Names in the code
+
+ai-editor and rule-compilers are implemented, and where their real names differ from the first draft of this design the code wins. Differences found while implementing tasks 1 to 12, and the choices made where the draft left a gap:
+
+- ai-editor's settings type is `EditorSettings` (`src/editor/editor-types.ts`), not `EditorConfig`; its `editorClient` is now `"anthropic" | "fixtures" | "off"` and `createEditorClient(settings, fetch, fixtures)` returns `null` for `off`. `Config extends EditorSettings`.
+- `EditorDeps` is `{ client, budget, cache, log }`. The scheduler's runner is `(snapshot, status, now, mode) => Promise<EditionResult>` with `mode` `"spend"` or `"reuse"` (see "Scheduler"); `createApp` builds it over `runEdition`.
+- `ENV_VARIABLES` is an array of `{ name, default }`. `realTimers()` is a function returning `Timers`. `nextDelay` returns the time of the next attempt in milliseconds since the epoch. `SchedulerDeps` also holds `editor: { run, policy } | null`, `modelCallCap` (shown on 802 before the first edition) and an optional `compile` (default `compileAll`; Property 8 uses a stand-in so that three simulated days stay cheap).
+- `createStore({ aiEditor })` takes the one fact that cannot be read from the store. `framePage(def, compiled, frame)` returns a `PublishOutcome`; not-found views are `{ ...page, etag: "" }`. `contentKey` and `pageEtag` take a `KeyParts` object.
+- `missingSubpageView(page, now)` takes the published page (it needs the subpage count), not `(def, now)`. `renderHtml(view, urls)` and `renderPlain(kind, terminal, urls)` take the `AssetUrls`, which `render-html.ts` defines and `assets.ts` re-exports. `screenOf(view)` (the stamped screen of a view) is exported by `render-html.ts`. `renderScreenHtml`, `renderTxt` and `renderAnsi` take a screen that is already stamped; the router stamps.
+- The router creates its own body cache and drops the entries of a replaced page version when it next serves that page, so `RouterDeps` stays `{ store, assets, clock }`. `createRouter` returns a `Router` function type.
+- Starting is split so tests can run it: `run.ts` exports `startServer(options)` (config, files, `createApp`, listen, `scheduler.start()`, log line) returning `{ ok: false, problems }` or `{ ok: true, port, app, shutdown() }`; `main.ts` only turns that into an exit code and signal handlers. `app-files.ts` exports `appRoot()`, `readAppFiles(root, withFixtures)` and `parseSnapshotText`. `createApp` returns `{ router, scheduler, store, assets, boot }` and itself calls `scheduler.boot()`. `startHttpServer(router, port, host)` returns `{ port, close() }`.
+- For a `HEAD` response `Content-Length` is that of the `GET` body and the body is empty; for a `304` it is `0` (Property 5 below says the same).
+- `public/app.css` is a one-line placeholder until task 13, because boot reads it (3.1); `public/app.js` is empty until task 14.
+- `test/boundaries.test.ts` lets files under `test/server/` also import `node:zlib` and `node:http`; the other test directories keep the old list.
+- Property 8 runs 15 times, not 100: each run simulates three days (about 1,300 fetches) on the real store.
 
 ## Overview
 
@@ -25,7 +41,7 @@ main.ts ─> loadConfig ─> readAppFiles (boot only) ─> createApp
 | File | Exports |
 |---|---|
 | `src/server/config.ts` | `loadConfig`, `Config`, `ENV_VARIABLES` |
-| `src/server/app-files.ts` | `readAppFiles(root)`, `AppFiles` (the boot reads of 3.1) |
+| `src/server/app-files.ts` | `readAppFiles(root, withFixtures)`, `appRoot`, `parseSnapshotText`, `AppFiles` (the boot reads of 3.1) |
 | `src/server/assets.ts` | `buildAssets`, `AssetTable`, `Asset`, `AssetUrls`, `FAVICON_SVG`, `ROBOTS_TXT` |
 | `src/server/store.ts`, `etag.ts` | `createStore`, `Store`, `StoreReader`, `PublishedPage`, `PublishOutcome`, `framePage`; `contentKey`, `pageEtag` |
 | `src/server/scheduler.ts`, `timers.ts` | `createScheduler`, `Scheduler`, `SchedulerDeps`, `nextDelay`; `Timers`, `realTimers` |
@@ -34,7 +50,7 @@ main.ts ─> loadConfig ─> readAppFiles (boot only) ─> createApp
 | `src/server/render-html.ts`, `render-alt.ts`, `render-json.ts`, `render-plain.ts`, `escape-html.ts` | `renderHtml`, `renderFrag`; `renderAlt`, `row22Text`; `renderJson`, `renderStatusJson`; `renderPlain` (404 and 400 pages); `escapeHtml` |
 | `src/server/negotiate.ts`, `compress.ts`, `headers.ts` | `chooseEncoding`, `ifNoneMatch`, `isTerminalAgent`; `compress`, `createBodyCache`; `baseHeaders`, `CSP` |
 | `src/server/router.ts` | `createRouter`, `RouterRequest`, `RouterResponse`, `RouterDeps` |
-| `src/server/http-server.ts`, `app.ts`, `main.ts` | `startHttpServer`; `createApp`, `App`; entry point |
+| `src/server/http-server.ts`, `app.ts`, `run.ts`, `main.ts` | `startHttpServer`; `createApp`, `App`; `startServer`; entry point |
 | `src/pages/stamp-clock.ts`, `src/sources/user-agent.ts` (amended), `src/sources/http.ts` (amended) | `stampClock`; `userAgent(origin)`; `HttpClientDeps.userAgent?` |
 | `public/app.js`, `public/app.css`, `public/tsconfig.json` | client; stylesheet; `checkJs` config |
 | `scripts/lib/payload.ts`, `scripts/payload.ts` | `measurePayload`, `BUDGETS`, `checkBudgets`; entry point |
@@ -47,8 +63,9 @@ main.ts ─> loadConfig ─> readAppFiles (boot only) ─> createApp
 ## Types
 
 ```ts
-interface Config extends EditorConfig {                     // EditorConfig.editorClient becomes "anthropic" | "fixtures" | "off"
+interface Config extends EditorSettings {                   // EditorSettings.editorClient becomes "anthropic" | "fixtures" | "off"
   readonly port: number; readonly refresh: "on" | "off"; readonly publicOrigin: string | null;
+  readonly editorBootDelayMs: number; readonly editorMinIntervalMs: number;
 }
 interface PublishedPage {
   readonly number: number; readonly def: PageDef; readonly screens: NonEmpty<ValidPage>;
@@ -79,11 +96,11 @@ Not-found views carry a `PublishedPage` made by `framePage`, the store's own fra
 
 ## Configuration
 
-zod schema over the eight variables of 2.2; empty strings count as unset. `PUBLIC_ORIGIN` must satisfy `new URL(v).origin === v` with protocol `https:`. `ENV_VARIABLES`: `PORT=3000`, `ANTHROPIC_API_KEY=`, `EDITOR_MODEL=claude-opus-5-5`, `MAX_MODEL_CALLS_PER_DAY=60`, `EDITOR_MAX_CALLS_PER_BOOT=30`, `EDITOR_CLIENT=anthropic`, `REFRESH=on`, `PUBLIC_ORIGIN=`. Problem sentences come from issue paths, never issue messages (ai-editor "Error handling"). `Config` extends `EditorConfig`, so it goes to `createEditorClient` as it is; that returns `null` for `off`, and for `anthropic` without a key.
+zod schema over the ten variables of 2.2 and 2.5; empty strings count as unset. `PUBLIC_ORIGIN` must satisfy `new URL(v).origin === v` with protocol `https:`. `ENV_VARIABLES`: `PORT=3000`, `ANTHROPIC_API_KEY=`, `EDITOR_MODEL=claude-opus-5-5`, `MAX_MODEL_CALLS_PER_DAY=60`, `EDITOR_MAX_CALLS_PER_BOOT=30`, `EDITOR_BOOT_DELAY_MS=600000`, `EDITOR_MIN_INTERVAL_MS=10800000`, `EDITOR_CLIENT=anthropic`, `REFRESH=on`, `PUBLIC_ORIGIN=`. Problem sentences come from issue paths, never issue messages (ai-editor "Error handling"). `Config` extends `EditorSettings`, so it goes to `createEditorClient` as it is; that returns `null` for `off`, and for `anthropic` without a key.
 
 ## Boot
 
-`createApp({ config, files, clock, timers, random, fetch, log })` builds assets, the store, the editor client (`fixtures`: every parsed `EditorFixture`; a file that fails the schema is logged and skipped), the budget, the cache, the HTTP client (`{ fetch, delay: realDelay, userAgent: userAgent(config.publicOrigin) }`) and the scheduler, then calls `scheduler.boot()`. It runs `compileAll` at the boot time of 3.3, publishes every page, publishes 802 again so it lists those compile times, and starts the edition. `main.ts` then calls `startHttpServer(router, port)` and `scheduler.start()`. `payload`, `screenshots` and the router tests call `createApp` with an env object, so they run the same code as production.
+`createApp({ config, files, clock, timers, random, fetch, log })` builds assets, the store, the editor client (`fixtures`: every parsed `EditorFixture`; a file that fails the schema is logged and skipped), the budget, the cache, the HTTP client (`{ fetch, delay: realDelay, userAgent: userAgent(config.publicOrigin) }`) and the scheduler, then calls `scheduler.boot()`. It runs `compileAll` at the boot time of 3.3, publishes every page, publishes 802 again so it lists those compile times, and asks the scheduler for the first edition, which the gates of "Scheduler" hold back. `main.ts` then calls `startHttpServer(router, port)` and `scheduler.start()`. `payload`, `screenshots` and the router tests call `createApp` with an env object, so they run the same code as production.
 
 Shutdown: `scheduler.stop()` clears every timer; `server.close()`; `server.closeIdleConnections()`; a 10 s timer calls `process.exit(1)` (unref'd); close completion calls `process.exit(0)`.
 
@@ -107,9 +124,16 @@ Per source state: `entry` (the current snapshot entry), `lastAttemptAt`, `inFlig
 | `wikimedia-onthisday` failure | `attemptAt + 1,800,000` (requirement 5.2) |
 | `launch-library` | as most sources; never less than `attemptAt + 3,600,000` |
 
-On success: replace the entry; `compileAll(snapshot, status, now, pageFiles)`; publish each returned page whose def is affected, with `stale = isStale(source, fetchedAt, now)` (static and computed pages: `false`); reset `staleTimer` to `fetchedAt + staleAfterMs + 1 - now`; publish 802 from `compile802(serviceStatus(), now)`; trigger the edition for the two Wikipedia sources. `serviceStatus()` maps the store and the editor status as the ai-editor design gives it, with `aiEditor` true exactly when a client exists. A `staleTimer` firing republishes the source's affected pages from the last `compileAll` result with `stale: true`.
+On success: replace the entry; `compileAll(snapshot, status, now, pageFiles)`; for a Wikipedia source with an editor client, the reuse pass below; publish each returned page whose def is affected, with `stale = isStale(source, fetchedAt, now)` (static and computed pages: `false`); reset `staleTimer` to `fetchedAt + staleAfterMs + 1 - now`; publish 802 from `compile802(serviceStatus(), now)`; trigger the edition for the two Wikipedia sources. `serviceStatus()` maps the store and the editor status as the ai-editor design gives it, with `aiEditor` true exactly when a client exists. A `staleTimer` firing republishes the source's affected pages from the last `compileAll` result with `stale: true`.
 
-Edition: `running` flag and `pending` flag. Start records the two Wikipedia `fetchedAt` values; on completion it calls `store.setEditorStatus`, publishes each returned page whose source `fetchedAt` is unchanged (others counted as dropped), publishes 802, and runs again once if `pending`. The runner is `(snapshot, status, now) => runEdition(snapshot, status, now, deps)`; a rejection is logged as `edition: failed` and clears `running`.
+`scheduler.boot()` compiles and publishes everything at the boot time of 3.3, publishes 802, and triggers the edition once. `scheduler.start()` sets the source timers (only while `refresh` is `on`).
+
+Edition (requirements 6.1 to 6.9, Owner decisions 1). The runner is `(snapshot, status, now, mode) => Promise<EditionResult>` with `mode` `"spend"` or `"reuse"`. `createApp` builds it over one `EditorDeps`: `spend` passes the real budget; `reuse` passes the same client and cache, a budget whose `tryReserve` always returns `false` (its `usage` is the real one), and a `log` that drops lines. The policy is `"gated"` for client `anthropic`, `"free"` for `fixtures` and `"none"` for no client.
+
+- **Reuse pass.** After a Wikipedia success the scheduler awaits `runner(snapshot, status, now, "reuse")` before publishing. `editPage` reads the draft cache before the budget, so a page whose input is unchanged comes back `ai` from the cache at no cost, and every other AI page comes back as the rules draft. The scheduler takes from the result only pages with editor `ai` and puts them in place of the `compileAll` pages of the same number, so a half-hourly feed refresh does not turn edited pages back into rules pages for up to three hours. The status of this pass is discarded.
+- **Spend edition.** State: `bootAt`, `lastStartAt` (`null` before the first), `running`, `dirty` (a trigger has come since the last start), `gateTimer`. `trigger()` sets `dirty` and calls `tryStart()`. `tryStart()` returns when `dirty` is false or `running` is true (a trigger during an edition leaves `dirty` set, which is the `pending` flag: exactly one more edition follows). `none` returns at once. `free` starts. `gated` returns when `refresh` is `off`; otherwise `earliest = max(bootAt + editorBootDelayMs, lastStartAt + editorMinIntervalMs)`, and it starts when `now >= earliest`, else sets one `gateTimer` for `earliest - now` that calls `tryStart()`. A short wake that sleeps again never reaches `bootAt + editorBootDelayMs`, so it spends nothing.
+- **Start.** `dirty = false`, `lastStartAt = now`, `running = true`, record the two Wikipedia `fetchedAt` values. On completion: `store.setEditorStatus`, publish each returned page whose source `fetchedAt` is unchanged (others counted as dropped), publish 802, `running = false`, `tryStart()`. A rejection is logged as `edition: failed`, clears `running`, and does not reset `lastStartAt`.
+- **Why both gates.** The delay protects a host that restarts; the interval bounds a host that stays up; the draft cache makes an unchanged page cost nothing; the two count caps are the last stop. **The daily cap is per process.** `MAX_MODEL_CALLS_PER_DAY` counts calls since this process started on that UTC day, and a restart empties the count (`createCallBudget` is in memory). On a free host that restarts, the daily bound that really holds is `EDITOR_MAX_CALLS_PER_BOOT` times the number of boots in the day; the boot delay is what keeps a boot that does not last from spending anything. A durable daily count would need storage, which the brief rules out.
 
 Every callback catches and logs. `scheduler.idle()` resolves when nothing is in flight, for tests.
 
@@ -289,7 +313,7 @@ Property 3: for all published pages with hostile alt texts, URLs and grid text, 
 
 Property 4: for all sequences of 1 to 40 publish calls mixing valid compiled pages and invalid ones (unknown number, a cell cast through `unknown` to bits 0, a bad colour or an illegible pair, an alt missing a word, 10 subpages, invalid `now`), after each call every held page's screens pass `validateGrid`, `get(n)` is the same object as after the last accepted publish of n, `failures(n)` counts the rejected ones, and mutating an input afterwards changes nothing held. Validates: 4.1, 4.2, 4.3. (`test/server/store.property.test.ts`)
 
-Property 5: for all methods, raw URLs (any characters, `%`, `..`, `//`, NUL, 0 to 3,000 characters) and headers, a router over a booted store does not throw, answers a status in {200, 303, 304, 400, 404, 405, 503}, sets `Content-Length` to the body length, sends the CSP and the three headers of 8.1, sends no body for `HEAD`, and gives 405 with `Allow` for any method but `GET` and `HEAD`. Validates: 7.1 to 7.9, 8.1. (`test/server/router.property.test.ts`)
+Property 5: for all methods, raw URLs (any characters, `%`, `..`, `//`, NUL, 0 to 3,000 characters) and headers, a router over a booted store does not throw, answers a status in {200, 303, 304, 400, 404, 405, 503}, sets `Content-Length` to the body length, sends the CSP and the three headers of 8.1, sends `Content-Length` equal to the body length (to the `GET` body's length for `HEAD`, which has no body, and `0` for a 304), and gives 405 with `Allow` for any method but `GET` and `HEAD`. Validates: 7.1 to 7.9, 8.1. (`test/server/router.property.test.ts`)
 
 Property 6: for all pairs of published versions p, q of one page (q is p republished at another `now`, or p with one change: a cell, `stale`, `editor`, `dataAt` or one alt word), `p.etag === q.etag` exactly when every format, subpage and `reveal` value renders to equal bodies with the same request clock. Validates: 4.4, 8.4. (`test/server/etag.property.test.ts`)
 

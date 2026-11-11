@@ -39,19 +39,24 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
     expect(pkg.engines).toEqual({ node: ">=20.19.0" });
   });
 
-  it("defines exactly the five grid-core scripts and grid:check (rule-compilers 1.1)", () => {
+  it("defines exactly the scripts of server-and-viewer 1.1 (Departure 6 for typecheck)", () => {
     expect(pkg.scripts).toEqual({
       build: "tsc -p tsconfig.build.json",
+      dev: "tsx watch src/server/main.ts",
+      start: "node dist/server/main.js",
       test: "vitest run",
-      typecheck: "tsc --noEmit",
+      typecheck: "tsc --noEmit && tsc -p public/tsconfig.json",
       lint: "eslint . && prettier --check .",
       format: "prettier --write .",
+      e2e: "playwright test",
       "grid:check": "tsx scripts/grid-check.ts",
+      payload: "tsx scripts/payload.ts",
     });
   });
 
-  it("lists exactly the eight dev dependencies at the pinned versions", () => {
+  it("lists exactly the nine dev dependencies at the pinned versions (server-and-viewer 1.2)", () => {
     expect(pkg.devDependencies).toEqual({
+      "@playwright/test": "1.65.0",
       tsx: "4.23.15",
       typescript: "6.0.3",
       vitest: "4.1.12",
@@ -74,7 +79,7 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
       ...Object.values(pkg.devDependencies as JsonObject),
       ...Object.values(pkg.dependencies as JsonObject),
     ];
-    expect(versions).toHaveLength(10);
+    expect(versions).toHaveLength(11);
     for (const version of versions) {
       expect(typeof version === "string" && EXACT_VERSION.test(version)).toBe(true);
     }
@@ -103,8 +108,14 @@ describe("tsconfig files (requirement 1.6 and 1.7)", () => {
     });
   });
 
-  it("includes src, test, scripts and vitest.config.ts", () => {
-    expect(tsconfig.include).toEqual(["src", "test", "scripts", "vitest.config.ts"]);
+  it("includes src, test, scripts, vitest.config.ts and playwright.config.ts", () => {
+    expect(tsconfig.include).toEqual([
+      "src",
+      "test",
+      "scripts",
+      "vitest.config.ts",
+      "playwright.config.ts",
+    ]);
   });
 
   it("builds only src into dist with rootDir src", () => {
@@ -115,6 +126,23 @@ describe("tsconfig files (requirement 1.6 and 1.7)", () => {
       rootDir: "src",
       outDir: "dist",
     });
+  });
+});
+
+describe("public/tsconfig.json (server-and-viewer 12.1, design 'Client script')", () => {
+  it("checks app.js as strict plain JavaScript with the DOM library and no ambient types", () => {
+    const config = readJson("public/tsconfig.json");
+    expect(config.compilerOptions).toEqual({
+      allowJs: true,
+      checkJs: true,
+      noEmit: true,
+      strict: true,
+      noUncheckedIndexedAccess: true,
+      target: "ES2023",
+      lib: ["ES2023", "DOM", "DOM.Iterable"],
+      types: [],
+    });
+    expect(config.include).toEqual(["app.js"]);
   });
 });
 

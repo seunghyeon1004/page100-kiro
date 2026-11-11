@@ -178,11 +178,16 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
     }
   });
 
-  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths", () => {
+  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths, and in test/server also node:zlib and node:http (server-and-viewer 17.1)", () => {
     const allowed = new Set(["vitest", "fast-check", "node:fs", "node:path", "node:url"]);
+    // The server tests decode compressed bodies and talk to the app on 127.0.0.1 (design.md, "Test plan").
+    const serverOnly = new Set(["node:zlib", "node:http"]);
     for (const file of tsFiles("test")) {
       for (const specifier of specifiers(read(file))) {
-        const ok = specifier.startsWith(".") || allowed.has(specifier);
+        const ok =
+          specifier.startsWith(".") ||
+          allowed.has(specifier) ||
+          (file.startsWith("test/server/") && serverOnly.has(specifier));
         expect(ok, `${file} imports ${specifier}`).toBe(true);
       }
     }
@@ -375,6 +380,106 @@ describe("editor boundaries (ai-editor 1.2 to 1.4)", () => {
           expect(isInside(target, "src/editor"), `${file} imports ${specifier}`).toBe(false);
         }
       }
+    }
+  });
+});
+
+describe("server and client boundaries (server-and-viewer 1.3 to 1.5)", () => {
+  /** Each import or re-export statement of a file: its specifier and whether it is `import type` / `export type`. */
+  function importStatements(source: string): { specifier: string; typeOnly: boolean }[] {
+    const found: { specifier: string; typeOnly: boolean }[] = [];
+    for (const match of source.matchAll(
+      /\b(import|export)(\s+type)?\b[^;]*?\bfrom\s+["']([^"']+)["']/g,
+    )) {
+      if (match[3] !== undefined)
+        found.push({ specifier: match[3], typeOnly: match[2] !== undefined });
+    }
+    return found;
+  }
+
+  const srcFiles = tsFiles("src");
+  const serverFiles = tsFiles("src/server");
+
+  /** The files of `src` that import a module, by any specifier that `matches`. */
+  function importers(matches: (specifier: string) => boolean): string[] {
+    return srcFiles.filter((file) => specifiers(read(file)).some(matches));
+  }
+
+  it("lets only src/server/config.ts read process.env (1.3)", () => {
+    const envText = "process" + "\\.env\\b";
+    const pattern = new RegExp(envText);
+    const users = srcFiles.filter((file) => pattern.test(read(file)));
+    expect(users.filter((file) => file !== "src/server/config.ts")).toEqual([]);
+  });
+
+  it("lets only src/server/app-files.ts import node:fs (1.3)", () => {
+    const users = importers((s) => /^(node:)?fs(\/|$)/.test(s));
+    expect(users.filter((file) => file !== "src/server/app-files.ts")).toEqual([]);
+  });
+
+  it("lets only src/server/http-server.ts import node:http (1.3)", () => {
+    const users = importers((s) => /^(node:)?http2?$/.test(s));
+    expect(users.filter((file) => file !== "src/server/http-server.ts")).toEqual([]);
+  });
+
+  it("lets only src/server/compress.ts import node:zlib (1.3)", () => {
+    const users = importers((s) => /^(node:)?zlib$/.test(s));
+    expect(users.filter((file) => file !== "src/server/compress.ts")).toEqual([]);
+  });
+
+  it("lets the request-handling files import sources, editor, compilers and the scheduler as types only (1.4)", () => {
+    const handling = serverFiles.filter((file) => {
+      const name = file.slice("src/server/".length);
+      return (
+        name === "router.ts" ||
+        name === "views.ts" ||
+        name === "negotiate.ts" ||
+        name === "compress.ts" ||
+        name === "headers.ts" ||
+        /^render-[^/]+\.ts$/.test(name)
+      );
+    });
+    for (const file of handling) {
+      const source = read(file);
+      for (const { specifier, typeOnly } of importStatements(source)) {
+        const target = resolvedTarget(file, specifier);
+        const restricted =
+          isInside(target, "src/sources") ||
+          isInside(target, "src/editor") ||
+          isInside(target, "src/compilers") ||
+          target === "src/server/scheduler.js";
+        if (restricted) expect(typeOnly, `${file} imports ${specifier} as a value`).toBe(true);
+      }
+      expect(specifiers(source).length, `${file} has an import form the scan misses`).toBe(
+        importStatements(source).length,
+      );
+    }
+  });
+
+  it("lets no file outside src/server import src/server (1.4)", () => {
+    for (const file of srcFiles.filter((f) => !isInside(f, "src/server"))) {
+      for (const specifier of specifiers(read(file))) {
+        const target = resolvedTarget(file, specifier);
+        expect(isInside(target, "src/server"), `${file} imports ${specifier}`).toBe(false);
+      }
+    }
+  });
+
+  it("keeps public/app.js free of imports, eval, storage, cookies and style writes (1.5)", () => {
+    const source = readFileSync(join(ROOT, "public/app.js"), "utf8");
+    expect(specifiers(source), "public/app.js imports").toEqual([]);
+    expect(/(^|\n)\s*import\b/.test(source), "public/app.js has an import form").toBe(false);
+    const banned: readonly RegExp[] = [
+      new RegExp("\\bev" + "al\\b"),
+      new RegExp("new\\s+Func" + "tion\\b"),
+      new RegExp("local" + "Storage"),
+      new RegExp("session" + "Storage"),
+      new RegExp("document\\.coo" + "kie"),
+      new RegExp("\\.sty" + "le\\b"),
+      new RegExp("[\"'`]sty" + "le[\"'`]"),
+    ];
+    for (const pattern of banned) {
+      expect(pattern.test(source), `public/app.js matches ${String(pattern)}`).toBe(false);
     }
   });
 });
