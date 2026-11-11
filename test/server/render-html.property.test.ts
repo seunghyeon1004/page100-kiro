@@ -116,7 +116,12 @@ describe("renderHtml properties", () => {
           for (const text of texts) {
             const escaped = escapeHtml(text);
             expect(html).toContain(`${MARK}${escaped}${MARK}`);
-            if (escaped !== text) expect(html).not.toContain(`${MARK}${text}${MARK}`);
+            // The raw form must not appear, unless it is itself the escaped form of another
+            // generated text ("&amp;1" is what "&1" escapes to), which is then correct output.
+            const isAnothersEscape = texts.some((other) => escapeHtml(other) === text);
+            if (escaped !== text && !isAnothersEscape) {
+              expect(html).not.toContain(`${MARK}${text}${MARK}`);
+            }
           }
 
           for (const match of html.matchAll(/\b(?:href|src|action)="([^"]*)"/g)) {

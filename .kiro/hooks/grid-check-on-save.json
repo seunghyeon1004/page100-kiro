@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Grid check when a page file is saved",
+      "description": "Every save of pages/*.page runs the validator over all pages. A page that does not fit 40x24 is reported at once, with row and column.",
+      "trigger": "PostFileSave",
+      "matcher": "pages/.*\\.page$",
+      "action": {
+        "type": "command",
+        "command": ".kiro/hooks/scripts/log-fire.sh PostFileSave pages grid:check; npm run -s grid:check 2>&1 | tail -6"
+      }
+    },
+    {
+      "name": "Grid check after a write tool touches pages or compilers",
+      "description": "Same check, bound to the write tools, because file-save events are an editor event and may not exist in a headless CLI run.",
+      "trigger": "PostToolUse",
+      "matcher": "fs_write|str_replace|fs_append",
+      "action": {
+        "type": "command",
+        "command": ".kiro/hooks/scripts/log-fire.sh PostToolUse write grid:check; npm run -s grid:check 2>&1 | tail -6"
+      }
+    }
+  ]
+}

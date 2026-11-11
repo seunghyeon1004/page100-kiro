@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Typecheck and tests when the agent stops",
+      "description": "The agent's last word is checked by a real run: typecheck, then the unit and property tests.",
+      "trigger": "Stop",
+      "action": {
+        "type": "command",
+        "command": ".kiro/hooks/scripts/log-fire.sh Stop typecheck+test; (npx tsc --noEmit && npx vitest run 2>&1 | grep -E 'Test Files|Tests ') 2>&1 | tail -4 | tee -a docs/kiro-evidence/hook-fires.log"
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Fit check",
+      "description": "Type /fit to have the agent review the working-tree diff against grid-rules.md and editorial.md before a commit.",
+      "trigger": "UserPromptSubmit",
+      "matcher": "^/fit\\b",
+      "action": {
+        "type": "agent",
+        "prompt": "The user asked for a fit check. 1. Run `git diff --stat` and `git diff` (read only). 2. Read .kiro/steering/grid-rules.md and .kiro/steering/editorial.md. 3. For every changed line under src/grid, src/markup, src/compilers, src/editor or pages/, check: nothing can reach the store without validateGrid; no row can exceed 40 cells; no number is written by hand instead of through src/compilers/format.ts; no validator, schema or test was loosened. 4. Run `npm run -s grid:check`. 5. Answer with one line per rule: PASS or FAIL, with file and line for each FAIL. Change no file."
+      }
+    }
+  ]
+}

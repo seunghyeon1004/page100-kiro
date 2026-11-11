@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Guard shell commands",
+      "description": "Refuses git staging/commits/pushes and any command that touches a secrets file or a parent directory.",
+      "trigger": "PreToolUse",
+      "matcher": "execute_bash",
+      "action": { "type": "command", "command": ".kiro/hooks/scripts/guard-shell.sh" }
+    }
+  ]
+}
