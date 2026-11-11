@@ -34,9 +34,9 @@ The second was the rule list in `tech.md`. It came from the failures seen in an 
 | `pages-and-sources` | 70 | 12 | 27 | Page registry, frame builder, text alternative model, seven sources with zod schemas and recorded fixtures, boot snapshot |
 | `rule-compilers` | 76 | 14 | 28 | Formatters, text fitting, mosaic canvas (charts, weather symbols, moon, block lettering), one compiler per page, `grid:check` |
 | `ai-editor` | 70 | 8 | 15 | Draft checks, call budget, draft cache, edition runner, Anthropic and fixture clients |
-| `server-and-viewer` | 91 | 9 | 21 | Store, scheduler, five renderers, router, headers, client script, CSS, byte budgets, browser tests, deploy files |
+| `server-and-viewer` | 92 | 9 | 21 | Store, scheduler, five renderers, router, headers, client script, CSS, byte budgets, browser tests, deploy files |
 
-427 acceptance criteria in EARS form, 63 correctness properties, 118 tasks, all ticked. 62 of the properties are fast-check tests named `Property N: ...`; the full suite is 1,211 tests.
+428 acceptance criteria in EARS form, 63 correctness properties, 118 tasks, all ticked. 62 of the properties are fast-check tests named `Property N: ...`; the full suite is 1,211 tests.
 
 How the spec-driven approach compared with vibe coding: the specs paid for themselves at the seams. The compilers spec was written while the pages spec was still being implemented, from its design document alone, and the editor spec from the compilers' design. When the implementations met, the differences were names, not behaviour. The properties also caught real bugs that examples would not have: a repertoire table that was not sorted, a date generator producing invalid dates, and a property test whose own assertion was unsound (see "by hand"). One piece was deliberately vibe-coded for contrast: the MCP server and the three agents (session 16). That was quicker and fine for a dev tool with five small functions, but it shipped with a permission mistake that the spec'd code never had (agents created with fully trusted shell and write tools, fixed in the same session) and without a registration step, which had to be done afterwards.
 

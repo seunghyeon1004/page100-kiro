@@ -8,6 +8,8 @@ Teletext was the text service built into televisions from the 1970s until it was
 
 Page 100 serves today's world the same way: news, weather, exchange rates, developer news, earthquakes, rocket launches, the moon, on this day, a quiz. Every page is exactly one screen. An AI editor shortens the news to fit, and a validator decides whether it did. If a page does not fit the grid, it does not ship.
 
+**Live: <https://page100-kiro.onrender.com>** (free hosting: the first request after a quiet spell can take up to a minute to wake it).
+
 Built for Kiroween 2026, category **Resurrection**. Built with Kiro: see [`.kiro/README.md`](.kiro/README.md).
 
 ## Why bring it back
@@ -16,7 +18,7 @@ A Page 100 page is a few kilobytes, reads in ten seconds, and never asks you for
 
 - **Small.** The first visit downloads 11,515 bytes in total: HTML, CSS, script and font, brotli-compressed. Every further page is about 1 KB. These numbers are measured by `npm run payload` and a test fails if a budget is exceeded.
 - **Works without JavaScript.** Every page is server-rendered HTML with links and a small form. JavaScript only adds the remote-control feel.
-- **Works in a terminal.** `curl https://<host>/200` prints the page in colour. `/200.txt` is plain text and `/200.json` is data.
+- **Works in a terminal.** `curl https://page100-kiro.onrender.com/200` prints the page in colour. `/200.txt` is plain text and `/200.json` is data.
 - **Works with a screen reader.** The block-graphics grid is hidden from assistive technology. Each page carries a real text version (headings, lists, tables with header cells) built from the same data, and the T key shows it to everyone.
 - **Calm.** No adverts, no tracking, no cookies, no notifications, no infinite anything.
 
@@ -71,7 +73,7 @@ public sources ──> src/sources ──> Snapshot ──> src/compilers ──
 
 - **The grid is the gate** (`src/grid`). A screen is 24 rows of 40 cells. A cell is a character from a fixed set or one of 63 block mosaics, with a foreground and background from eight colours. `validateGrid` is the only way to get a `ValidPage`, and the store, the cache and every renderer accept nothing else. Text must reach a 4.5:1 contrast ratio, so blue on black is rejected by the validator, not by review.
 - **Numbers come from data, words from the editor.** Temperatures, rates, magnitudes and times are placed by code through one formatter module. The AI editor only shortens text it is given.
-- **The AI editor is on a short lead** (`src/editor`). It returns plain rows. Each draft is checked for width and row count, for characters outside the set, for any number that is not in the source, and for any capitalised name that is not in the source. A failed draft goes back with the exact violations ("slot background row 1 is 39 cells, limit 38") at most twice. After that the rule-based page is published. Recorded real drafts are in `test/fixtures/editor/`; in the last recording the checks sent back 1 draft of 10.
+- **The AI editor is on a short lead** (`src/editor`). It returns plain rows. Each draft is checked for width and row count, for characters outside the set, for any number that is not in the source, and for any capitalised name that is not in the source. A failed draft goes back with the exact violations ("slot background row 6 is 39 cells, limit 38") at most twice. After that the rule-based page is published. Recorded real drafts are in `test/fixtures/editor/`; in the last recording the checks sent back 1 draft of 10.
 - **Visitors never trigger a model call or a fetch.** Pages are compiled at boot from a bundled snapshot, so the site is complete in the first second, then refreshed per source on a schedule. Model calls are capped per day and per process, and the first edition waits until the process has been up for ten minutes. Page 802 shows the counters.
 - **Without an API key everything still works.** The rule-based compilers build every page. All tests run offline on recorded fixtures.
 
