@@ -19,7 +19,7 @@ describe("the files in pages/ (requirement 17.3)", () => {
     .filter((name) => name.endsWith(".page"))
     .sort();
 
-  it("holds exactly the four placeholders", () => {
+  it("holds exactly the four hand-written pages", () => {
     expect(files).toEqual(["666.page", "800.page", "801.page", "899.page"]);
   });
 
@@ -37,21 +37,57 @@ describe("the files in pages/ (requirement 17.3)", () => {
     }
   });
 
-  it("gives each placeholder its title line and a not-written line", () => {
-    const titles: Record<string, string> = {
-      "666.page": "Back from the dead",
-      "800.page": "How to use Page 100",
-      "801.page": "About, sources and licences",
-      "899.page": "Engineering test page",
-    };
-    for (const [name, title] of Object.entries(titles)) {
+  it("has real content in every file: no placeholder text and at least eight written rows", () => {
+    for (const name of files) {
       const text = readFileSync(join(PAGES_DIR, name), "utf8");
-      expect(text).toBe(` {y}${title}\n This page is not written yet.\n`);
-      const result = compileStatic(staticPageNumber(name) ?? 0, text);
-      expect(result.ok && result.page.subpages[0].alt).toEqual([
-        { kind: "paragraph", text: `${title} This page is not written yet.` },
-      ]);
+      expect(text, name).not.toContain("not written yet");
+      const written = text.split("\n").filter((line) => line.trim() !== "");
+      expect(written.length, name).toBeGreaterThanOrEqual(8);
     }
+  });
+
+  it("names every source on page 801", () => {
+    const text = readFileSync(join(PAGES_DIR, "801.page"), "utf8");
+    for (const source of [
+      "Wikipedia",
+      "CC BY-SA 4.0",
+      "Open-Meteo",
+      "CC BY 4.0",
+      "European Central Bank",
+      "Frankfurter",
+      "Hacker News",
+      "USGS",
+      "Launch Library 2",
+      "Bedstead",
+      "MIT",
+    ]) {
+      expect(text, source).toContain(source);
+    }
+  });
+
+  it("shows all 63 mosaic patterns, joined and separated, on page 899", () => {
+    const result = compileStatic(899, readFileSync(join(PAGES_DIR, "899.page"), "utf8"));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const cells = result.page.subpages[0].content.flat();
+    for (const separated of [false, true]) {
+      const seen = new Set(
+        cells.flatMap((cell) =>
+          cell.kind === "mosaic" && cell.separated === separated ? [cell.bits] : [],
+        ),
+      );
+      expect(seen.size, separated ? "separated" : "joined").toBe(63);
+    }
+  });
+
+  it("conceals exactly one run of text on page 666", () => {
+    const result = compileStatic(666, readFileSync(join(PAGES_DIR, "666.page"), "utf8"));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const rowsWithConcealed = result.page.subpages[0].content.filter((row) =>
+      row.some((cell) => cell.conceal),
+    );
+    expect(rowsWithConcealed.length).toBe(1);
   });
 });
 

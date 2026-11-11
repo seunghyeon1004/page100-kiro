@@ -1,2 +1,20 @@
- {y}About, sources and licences
- This page is not written yet.
+{y}Page 100 is teletext, brought back:
+{w}the text service built into televisions
+from the 1970s, switched off in most
+countries in the 2010s. Built for
+Kiroween 2026. MIT licence, source code:
+{c}github.com/seunghyeon1004/page100-kiro
+{w}No adverts, tracking, cookies, accounts.
+An AI editor (Claude) shortens news and
+history text to fit. Numbers always
+come from the data. See {c}802{w}.
+{c}Wikipedia{w} (Wikimedia feed): CC BY-SA 4.0
+{c}Weather:{w} Open-Meteo, CC BY 4.0
+{c}Rates:{w} European Central Bank reference
+rates via Frankfurter
+{c}Developer news:{w} Hacker News API
+{c}Earthquakes:{w} USGS, public domain
+{c}Launch Library 2{w} by The Space Devs
+{c}Moon:{w} computed here
+{c}Font:{w} Bedstead by Ben Harris,
+public domain.

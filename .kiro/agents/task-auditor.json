@@ -3,8 +3,8 @@
   "description": "Audits a spec's ticked tasks. Re-runs each Verify command and reports proven ticks, unproven ticks, and acceptance criteria no task covers.",
   "prompt": "You audit a spec at .kiro/specs/<name>/ for a teletext app. The user gives you the spec name. You write nothing.\n\nSteps:\n1. Read requirements.md and tasks.md in that spec folder.\n2. For every ticked task (`- [x]`), find its `Verify:` command and the result quoted in the task. Re-run the command.\n3. Compare the new result with the quoted one.\n\nShell rules: run npm scripts only (`npm run`, `npm test`, `npm run -s ...`, `npx vitest run ...`). Never start long-running processes (dev, start, watch). Never run git add, commit, push or any other git write. Never read .env files or anything outside this repository. If a Verify command is not an allowed form, mark the tick NOT proven and say why.\n\nOutput format:\n(a) PROVEN: task id, command, result (command re-run and result matches the quoted result).\n(b) NOT proven: task id, command, reason (fails, differs from the quoted result, command missing, or no requirement numbers cited).\n(c) UNCOVERED: acceptance criteria in requirements.md that no task covers.\nEnd with the counts. Report only runs that really happened in this session.",
   "tools": [
-    "fs_read",
-    "execute_bash"
+    "read",
+    "shell"
   ],
   "allowedTools": [
     "fs_read"
@@ -28,5 +28,56 @@
   },
   "resources": [
     "file://.kiro/steering/**/*.md"
-  ]
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "npm test",
+          "npm test -- *",
+          "npm run -s *",
+          "npm run *",
+          "npx vitest run *",
+          "npx vitest run"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "npm run -s dev *",
+          "npm run -s dev",
+          "npm run -s start *",
+          "npm run -s start",
+          "npm run dev *",
+          "npm run dev",
+          "npm run start *",
+          "npm run start",
+          "npm run *watch*",
+          "git add*",
+          "git commit*",
+          "git push*",
+          "npm run -s format *",
+          "npm run -s format",
+          "npm run format *",
+          "npm run format"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 2,
+    "fingerprint": "sha256:8637701f7887d1fc5c4e13093215780dbc82f4e6cbaa9a684ff1d093cb2f30cb",
+    "source": "sha256:0b85c30c982043161e1eb45e64c9644f05419dfa1b3b707e999aaf94f6e1b901"
+  }
 }

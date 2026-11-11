@@ -1,2 +1,20 @@
- {y}How to use Page 100
- This page is not written yet.
+
+Type {c}three digits{w} to open a page.
+{c}100{w} is the index.
+{c}Left{w}/{c}Right{w}: previous, next page.
+{c}Up{w}/{c}Down{w}: subpages. Several subpages
+turn by themselves; {c}H{w} holds.
+
+{c}R{w} reveals hidden answers. Try {c}550{w}.
+{c}T{w} shows the page as plain text.
+{c}I{w} returns to the index.
+{c}Z X C V{w} follow the red, green,
+yellow and blue links on the bottom row.
+
+On a phone: number pad under the screen.
+No JavaScript needed: there is a form
+and links. In a terminal:
+{c}curl <this site>/100
+
+{y}Every page is 40 columns by 24 rows.
+If it does not fit, it does not ship.

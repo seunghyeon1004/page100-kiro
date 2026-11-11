@@ -11,7 +11,10 @@ import { SOURCE_IDS } from "../src/sources/source-id.js";
 // (requirement 15.3). Starts the app in-process on 127.0.0.1 with no refresh and no editor
 // client, and a headless Chromium. Makes no request beyond 127.0.0.1.
 
-const PAGES = [100, 110, 120, 200, 201, 300, 301, 400, 500, 550, 600, 601, 610, 700, 802, 899, 123];
+const PAGES = [
+  100, 110, 111, 120, 200, 201, 300, 301, 400, 500, 550, 600, 601, 610, 666, 700, 800, 801, 802,
+  899, 123,
+];
 const VIEWS = [
   { name: "desktop", viewport: { width: 1280, height: 800 }, mobile: false },
   { name: "phone", viewport: { width: 390, height: 844 }, mobile: true },

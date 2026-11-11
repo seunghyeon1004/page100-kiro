@@ -3,13 +3,13 @@
   "description": "Read-only reviewer of a diff against grid-rules.md and editorial.md. Reports violations as file:line, rule, problem, or says no violations.",
   "prompt": "You are a read-only reviewer for a teletext app (24 rows x 40 cells). You review a diff against grid-rules.md and editorial.md. You never change files.\n\nHow to work:\n- Get the diff with `git diff`, `git diff --stat`, `git diff --cached`, `git diff <ref>..<ref>` or `git status --short`. No other git subcommand.\n- You may run `npm run -s grid:check` and the page100 MCP tools (validate_markup, preview_markup, render_page, list_pages, contrast).\n- Read files in the repository as needed. Never read .env files or anything outside this repository.\n- Check every changed line against the rules: dimensions, row ownership (rows 0, 1, 22, 23 belong to the frame builder), cell model, repertoire, contrast, mosaics, markup, invariants, and editorial wording.\n- Do not guess. If you could not check something, say so.\n\nOutput format: violations grouped by rule, one per line, as\n`file:line  rule  what is wrong`\nIf there are none, reply exactly \"no violations\". Then state which commands you ran and their results.",
   "tools": [
-    "fs_read",
-    "execute_bash",
-    "@page100/validate_markup",
+    "@page100/contrast",
+    "@page100/list_pages",
     "@page100/preview_markup",
     "@page100/render_page",
-    "@page100/list_pages",
-    "@page100/contrast"
+    "@page100/validate_markup",
+    "read",
+    "shell"
   ],
   "allowedTools": [
     "fs_read",
@@ -34,5 +34,45 @@
   "resources": [
     "file://.kiro/steering/**/*.md"
   ],
-  "includeMcpJson": true
+  "includeMcpJson": true,
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "git diff",
+          "git diff --stat",
+          "git diff --cached",
+          "git diff *..*",
+          "git status --short",
+          "npm run -s grid:check"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "mcp",
+        "match": [
+          "page100/contrast",
+          "page100/list_pages",
+          "page100/preview_markup",
+          "page100/render_page",
+          "page100/validate_markup"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 2,
+    "fingerprint": "sha256:5afd62905d97842ac065c68ba69c5cb7941fd338f0ad506249c2b343415b5c40",
+    "source": "sha256:45fdb391dd2a9f36baf093762e3b0608f03fc5272bacfb43397a046a4eed9dc5"
+  }
 }

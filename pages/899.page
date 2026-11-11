@@ -1,2 +1,20 @@
- {y}Engineering test page
- This page is not written yet.
+{y}Colours
+{K}{w}  black   {R}{k}   red    {G}{k}  green   {Y}{k}  yellow  
+{K}{w}          {R}{k}          {G}{k}          {Y}{k}          
+{B}{w}   blue   {M}{k}  magenta {C}{k}   cyan   {W}{k}  white   
+{B}{w}          {M}{k}          {C}{k}          {W}{k}          
+
+{y}Mosaics 1-63 in order, then separated
+{c}01-21 {g}🬀🬁🬂🬃🬄🬅🬆🬇🬈🬉🬊🬋🬌🬍🬎🬏🬐🬑🬒🬓▌{w} contiguous
+{c}22-42 {g}🬔🬕🬖🬗🬘🬙🬚🬛🬜🬝🬞🬟🬠🬡🬢🬣🬤🬥🬦🬧▐
+{c}43-63 {g}🬨🬩🬪🬫🬬🬭🬮🬯🬰🬱🬲🬳🬴🬵🬶🬷🬸🬹🬺🬻█
+{c}01-21 {y}{~}🬀🬁🬂🬃🬄🬅🬆🬇🬈🬉🬊🬋🬌🬍🬎🬏🬐🬑🬒🬓▌{/~}{w} separated
+{c}22-42 {y}{~}🬔🬕🬖🬗🬘🬙🬚🬛🬜🬝🬞🬟🬠🬡🬢🬣🬤🬥🬦🬧▐
+{c}43-63 {y}{~}🬨🬩🬪🬫🬬🬭🬮🬯🬰🬱🬲🬳🬴🬵🬶🬷🬸🬹🬺🬻█
+
+{y}Characters
+ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+abcdefghijklmnopqrstuvwxyz £ ° €
+!"#$%&'()*+,-./:;<=>?@[\]^_`{{|}~
+ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß
+àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ
