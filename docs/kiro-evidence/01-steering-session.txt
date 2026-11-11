@@ -1,0 +1,119 @@
+$ kiro-cli chat --v3 --trust-workspace --no-interactive --trust-all-tools --model claude-opus-5.5 --effort high "<prompt below>"
+[warn] failed to set effort 'high': model 'claude-opus-5.5' offers no effort levels
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=9
+[tool] Read File
+[tool] status: InProgress
+[tool] List Directory
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Compute WCAG contrast for the eight colours
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Verify sextant mapping against Unicode names
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] web_search
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+Arrays work for `fileMatchPattern`. I've computed the contrast table and checked the sextant mapping against the Unicode 15 character names, so now I'll write the files.
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] Replace in File
+[tool] status: Completed
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] Count lines and confirm front matter
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+I wrote the eight steering files in `.kiro/steering/`. There is no application code yet.
+
+| File | Inclusion | Lines |
+|---|---|---|
+| `product.md` | always | 60 |
+| `tech.md` | always | 57 |
+| `structure.md` | always | 42 |
+| `grid-rules.md` | always | 149 |
+| `editorial.md` | fileMatch: `src/compilers/**`, `src/editor/**`, `pages/**` | 75 |
+| `frontend.md` | fileMatch: `public/**`, `src/server/**` | 103 |
+| `sources.md` | fileMatch: `src/sources/**`, `test/fixtures/**` | 55 |
+| `kiro-workflow.md` | manual | 79 |
+| **Total** | | **620** |
+
+**Checked, not guessed:**
+- **Contrast:** I computed the full 8×8 matrix with the WCAG luminance formula. 20 fg/bg pairs pass 4.5:1. The nearest values to the threshold are 4.00 (white on red) and 5.25 (red on black), so rounding can't change a result.
+- **Row 23 colours:** because white on red fails, the quick links are black text on red, green and yellow, and white text on blue.
+- **Mosaic mapping:** bit k is sextant position k+1. 0 maps to space, 21 to U+258C, 42 to U+2590 and 63 to U+2588. Any other value v maps to `U+1FB00 + v − 1 − (v>21) − (v>42)`. I checked all 64 values against the Unicode 15.0 character names: no mismatches, 64 distinct code points.
+- **Attribution lines:** I counted each one; all fit in 30 characters.
+
+**Decisions I made where the brief is silent.** These are marked as decisions in the files, and you may want to change some:
+- **Character set:** printable ASCII, plus `£ ° €`, plus the Latin-1 letters. Text outside it is converted by one function, and an item that still doesn't fit is skipped, not shown with a substitute character.
+- **Blank cells:** a blank cell is always a text space, never an empty mosaic. This keeps the parse/serialise round trip exact.
+- **Hand-written pages:** files in `pages/*.page` hold only rows 2–21. Code builds rows 0, 1, 22 and 23.
+- **Exact layouts** for rows 0, 1, 22 and 23.
+- **Refresh and staleness:** I chose the refresh intervals, and a source counts as stale when its data is older than twice its interval.
+- **Number formats** for rates, temperatures and other values.
+- **Byte budgets:** these are starting numbers, about 64 KiB for the first load (compressed).
+- **Colour-link keys** are Z, X, C and V.
+
+**Left open on purpose:**
+- **Licences:** the brief doesn't give them for Frankfurter, Hacker News or Launch Library 2. `sources.md` says to confirm them from each provider's terms before page 801 is written.
+- **Not yet chosen:** the `MAX_MODEL_CALLS_PER_DAY` default, the User-Agent host, and the query parameter for subpage URLs. Each is left to a later spec.
+- **Response field names:** for example, the featured-article key. These will come from recorded fixtures, not from memory.
+
+The agents, hooks and MCP server in `kiro-workflow.md` are only planned; I haven't created any of them.
+
+## Prompt (added afterwards; the run above used it)
+Read docs/product-brief.md. This repository is empty apart from that brief. Do not write application code yet.
+
+Write the steering files for this project in .kiro/steering/, using front matter to choose how each is included:
+
+1. product.md (inclusion: always) - what Page 100 is, who it is for, the eight non-negotiables, the page map, what is out of scope.
+2. tech.md (inclusion: always) - stack, runtime dependencies allowed (zod, @anthropic-ai/sdk only), dev tooling (TypeScript strict ESM, vitest, fast-check, eslint flat config, prettier, tsx, Playwright for e2e only), npm script names we will have (build, dev, start, test, typecheck, lint, format, e2e, grid:check, payload), commit and review rules: small commits; never commit, stage or push yourself; never read or print any file outside this repository, in particular nothing under the parent directories and no .env or secrets file; never weaken a validator, schema or test to make something pass; never mock the thing a test is meant to prove; tick a task only after running the command that proves it and quote the command; report only test runs that really happened.
+3. structure.md (inclusion: always) - the directory layout we will build (src/grid, src/markup, src/pages, src/sources, src/compilers, src/editor, src/server, public, pages (hand-written page markup), test mirrors src, tools/mcp, scripts, docs) with one line on what each holds, and naming rules.
+4. grid-rules.md (inclusion: always) - the exact, testable rules of the grid: dimensions, row roles (0 header, 1 banner, 2-21 content, 22 source/status, 23 quick links), cell model, the eight colours with RGB values, the 4.5:1 text contrast rule with the list of allowed fg/bg pairs computed from WCAG relative luminance (compute them properly, do not guess), mosaic bit numbering for the 2x3 cell and its mapping to Unicode (space, U+258C, U+2590, U+2588, U+1FB00-U+1FB3B: state the mapping rule precisely), the character repertoire, the page markup syntax, and the invariants every change must keep (round trip, nothing invalid is ever stored or served).
+5. editorial.md (inclusion: fileMatch, for src/compilers/**, src/editor/** and pages/**) - the voice, headline and abbreviation rules for 40 columns, how numbers and units are written, how truncation is done (never mid-word, never a dangling ellipsis on a number), attribution on row 22, and the "numbers from data, words from the editor" rule.
+6. frontend.md (inclusion: fileMatch, for public/** and src/server/**) - no-JavaScript baseline, the text alternative, keyboard map, phone keypad, focus and announcement rules, reduced motion, byte budget rules, CSP, no third-party requests.
+7. sources.md (inclusion: fileMatch, for src/sources/** and test/fixtures/**) - each data source with its URL pattern, licence and attribution line, refresh interval, a note that every response is parsed with zod, fixtures recorded under test/fixtures/sources, and the polite User-Agent string. Use these verified endpoints: Wikimedia feed https://api.wikimedia.org/feed/v1/wikipedia/en/featured/YYYY/MM/DD (keys vary by day: news and dyk appear on some days, mostread on others, so today and yesterday are both fetched and merged) and https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/all/MM/DD; Open-Meteo https://api.open-meteo.com/v1/forecast with comma-separated latitude/longitude lists (returns an array); Frankfurter https://api.frankfurter.dev/v1/latest?base=USD and https://api.frankfurter.dev/v1/YYYY-MM-DD..?base=USD&symbols=...; Hacker News https://hacker-news.firebaseio.com/v0/{topstories,showstories,askstories}.json and /v0/item/ID.json; USGS https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson; Launch Library https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=8&mode=list (rate-limited to 15 requests an hour without a key, so refresh at most hourly).
+8. kiro-workflow.md (inclusion: manual) - how we work with Kiro here: one spec per feature under .kiro/specs/<name>/ with requirements.md (EARS acceptance criteria, numbered), design.md (including correctness properties that become property tests), tasks.md (checkbox tasks that each cite requirement numbers and the command that verifies them); the custom agents and hooks we plan; and that session transcripts are saved under docs/kiro-evidence/.
+
+Keep each file tight and specific to this project: rules a reviewer could check, not general advice. Use plain English. Do not invent facts about the sources beyond what is given here and in the brief. When done, list the files you wrote with their line counts.

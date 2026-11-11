@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+test-results/
+playwright-report/
+# .kiro/ is never ignored: specs, steering, hooks and agents are part of the submission
