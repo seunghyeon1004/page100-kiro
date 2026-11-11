@@ -501,7 +501,9 @@ describe("the edition (requirements 6.1 to 6.9)", () => {
     expect(logs).toContain("edition: 2 pages published, 10 dropped, 0 failed");
     expect(store.get(500)?.editor).toBe("ai");
     // 6.3a: the refreshed feed text is the same, so the dropped pages come back from the cache.
-    expect(logs.some((line) => /dropped pages published from cached drafts/.test(line))).toBe(true);
+    expect(logs.some((line) => line.includes("dropped pages published from cached drafts"))).toBe(
+      true,
+    );
     expect(store.get(110)?.editor).toBe("ai");
   });
 });
