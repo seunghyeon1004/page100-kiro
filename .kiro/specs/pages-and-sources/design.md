@@ -104,6 +104,7 @@ Red, green, yellow, blue links are `label target`. Titles are sentence case; ban
 | 600 | Earthquakes | EARTHQUAKES M4.5+, LAST 24 HOURS | usgs | rules | Index 100 | Moon 601 | Launches 610 | Article 700 |
 | 601 | The moon tonight | THE MOON TONIGHT | computed | rules | Index 100 | Quakes 600 | Launches 610 | Article 700 |
 | 610 | Rocket launches | UPCOMING ROCKET LAUNCHES | launch-library | rules | Index 100 | Quakes 600 | Moon 601 | Article 700 |
+| 666 | Back from the dead | RESURRECTION | static | static | Index 100 | News 110 | Moon 601 | Help 800 |
 | 700 | Featured article | FEATURED ARTICLE | wikimedia-feed | ai | Index 100 | News 110 | Popular 120 | Help 800 |
 | 800 | How to use Page 100 | HOW TO USE PAGE 100 | static | static | Index 100 | About 801 | Status 802 | Test 899 |
 | 801 | About and sources | ABOUT, SOURCES AND LICENCES | static | static | Index 100 | Help 800 | Status 802 | Test 899 |
@@ -196,8 +197,8 @@ interface ArticleRef { title: string; extract: string | null; url: string | null
 interface FeaturedFeed { date: string /* D, YYYY-MM-DD */; news: NewsStory[] | null; mostRead: MostRead[] | null; featuredArticle: ArticleRef | null }
 interface NewsStory { text: string; articles: ArticleRef[] }
 interface MostRead { rank: number; title: string; views: number; extract: string | null }
-interface OnThisDay { month: number; day: number; events: DayEntry[]; births: DayEntry[]; deaths: DayEntry[] }
-interface DayEntry { year: number /* negative for BC */; text: string; articles: ArticleRef[] }
+interface OnThisDay { month: number; day: number; events: DayEntry[]; births: DayEntry[]; deaths: DayEntry[] /* each: the first 40 as delivered, plus any later entry that the response's `selected` list holds (12.7) */ }
+interface DayEntry { year: number /* negative for BC */; text: string }
 interface Weather { cities: CityWeather[] /* CITIES order, 24 */ }
 interface CityWeather { cityId: CityId; observedAt: Iso; temperatureC: number | null; weatherCode: number | null; windKmh: number | null; daily: DayForecast[] }
 interface DayForecast { date: string /* local YYYY-MM-DD */; weatherCode: number | null; maxC: number | null; minC: number | null; precipitationPct: number | null }
@@ -262,7 +263,7 @@ Property 12: for all sources and times t0, t1 (ms from 0 to 2^41), `isStale(sour
 
 ## Example tests
 
-- `test/pages/registry.test.ts`: the 29 numbers; the table above row by row; banner, title and label rules (2.3, 2.4); editor and source sets (2.5); `findPage` of 99, 100.5, `NaN`.
+- `test/pages/registry.test.ts`: the 30 numbers; the table above row by row; banner, title and label rules (2.3, 2.4); editor and source sets (2.5); `findPage` of 99, 100.5, `NaN`.
 - `test/pages/page-lookup.test.ts`: the examples in 3.1; 101 (100, 110), 898 (802, 899); wrap at 100 and 899.
 - `test/pages/attribution.test.ts`: `ATTRIBUTION` against the backticked last column of the `sources.md` table, read with `node:fs`.
 - `test/pages/frame-time.test.ts` and `build-screen.test.ts`: 201 subpage 2 of 6 at 2026-11-11T14:05:09.999Z, exact markup of rows 0 and 1; one subpage (no indicator); `9/9`; 10 subpages; indices -1, 1.5 and 6 of 6; `new Date(NaN)`; stale with and without `lastGoodAt`; 601 (`Computed by Page 100`); 800 (blank row 22); check order of 5.2.

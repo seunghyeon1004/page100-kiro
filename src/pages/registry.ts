@@ -142,6 +142,12 @@ export const REGISTRY: readonly PageDef[] = Object.freeze([
     ["Moon", 601],
     ["Article", 700],
   ]),
+  def(666, "Back from the dead", "RESURRECTION", "static", "static", [
+    ["Index", 100],
+    ["News", 110],
+    ["Moon", 601],
+    ["Help", 800],
+  ]),
   def(700, "Featured article", "FEATURED ARTICLE", "wikimedia-feed", "ai", [
     ["Index", 100],
     ["News", 110],

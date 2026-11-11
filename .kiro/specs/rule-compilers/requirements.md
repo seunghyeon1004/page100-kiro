@@ -1,6 +1,6 @@
 # rule-compilers: requirements
 
-Spec for `src/compilers`: the shared formatters, text fitting, content builder, mosaic drawing and moon calculation, one deterministic compiler per page or page family, `compileAll`, the three placeholder files in `pages/`, and `scripts/grid-check.ts`. Contracts: `editorial.md` (formatting, fitting, voice, numbers), `grid-rules.md` (cells, mosaics, repertoire, folding), `product.md` (page map), `frontend.md` ("Text alternative"), and the pages-and-sources design (page model, registry, frame, normalised types, snapshot). This spec does not restate them; it fixes what they leave open.
+Spec for `src/compilers`: the shared formatters, text fitting, content builder, mosaic drawing and moon calculation, one deterministic compiler per page or page family, `compileAll`, the four placeholder files in `pages/` (800, 801, 899 and 666), and `scripts/grid-check.ts`. Contracts: `editorial.md` (formatting, fitting, voice, numbers), `grid-rules.md` (cells, mosaics, repertoire, folding), `product.md` (page map), `frontend.md` ("Text alternative"), and the pages-and-sources design (page model, registry, frame, normalised types, snapshot). This spec does not restate them; it fixes what they leave open.
 
 ## Glossary
 
@@ -15,9 +15,33 @@ Spec for `src/compilers`: the shared formatters, text fitting, content builder, 
 ## Departures
 
 1. **Imports of `src/pages`.** `structure.md` lets `src/compilers` import `src/grid`, `src/markup` and `src/sources` types. Compilers also import `src/pages` (types, `REGISTRY`, `checkAltAgreement`, `checkCompiledPage`, `buildScreen`, `formatUtcTime`), as pages-and-sources Departure 4 foresaw.
-2. **A fourth argument to `compileAll`.** The request names `compileAll(snapshot, status, now)`. Compilers read no files, so the text of `pages/800.page`, `801.page` and `899.page` is passed in as `pageFiles`. The server spec and `grid:check` read the files.
+2. **A fourth argument to `compileAll`.** The request names `compileAll(snapshot, status, now)`. Compilers read no files, so the text of `pages/666.page`, `800.page`, `801.page` and `899.page` is passed in as `pageFiles`. The server spec and `grid:check` read the files.
 3. **Implausible values shown as `n/a`.** `editorial.md` uses `n/a` only for missing values. A value outside the plausible range for its kind (design, "Formatters") is also shown as `n/a`, so every column has a fixed maximum width and hostile data cannot push a page over 40 cells.
 4. **Scripts list.** grid-core 1.2 and pages-and-sources 1.4 fix the exact `package.json` scripts. This spec adds `grid:check` (already named in `tech.md`), and `test/scaffold.test.ts` checks the new list.
+
+## Owner answers
+
+Recorded 2026-11-11, before implementation. Each answer is carried into the requirements and design below.
+
+1. **`compileAll` takes four arguments**, `compileAll(snapshot, status, now, pageFiles)`: agreed (Departure 2).
+2. **Out-of-range values are shown as `n/a`**, with the ranges in the design table "Formatters": agreed (Departure 3).
+3. **Page 300 has two blocks.** The six `SERIES_SYMBOLS` currencies with change on the day, then a second block headed `Other rates` with ten more currencies from the latest rates, in this order: AUD, CAD, CHF, SEK, NOK, MXN, BRL, SGD, HKD, ZAR. The second block has no change column (requirement 12.1).
+4. **Amendment to pages-and-sources**, because the boot snapshot was 529 KB: the on-this-day normaliser keeps at most 40 events, 40 births and 40 deaths per list (the first 40 in the order the feed gives them, plus every entry that the response's `selected` list also holds), and each kept item keeps only the fields the compilers use. pages-and-sources requirement 12.7, its design and its tests are updated, and the snapshot is rebuilt offline with `scripts/refresh-snapshot.ts`.
+5. **One seasonal page is added to the registry**: 666, title `Back from the dead`, banner `RESURRECTION`, editor `static`, source `static`, text from `pages/666.page` (a placeholder for now, like 800, 801 and 899). The registry then holds 30 pages. pages-and-sources 2.1, 2.5, its design and `test/pages/registry.test.ts` are updated. Page 100 does not list 666 (requirement 9.1 stays at 18 sections) until the static-pages spec writes the page.
+
+Reading of answer 4: the response's `selected` key is a separate list of curated entries. An entry of `events`, `births` or `deaths` counts as `selected` when an entry of that `selected` list has the same year and the same text. In the recorded response that is one entry (events, index 5).
+
+## Differences between the design and the code
+
+The design was written from the pages-and-sources design document. Where the code differs, the code wins and `design.md` has been changed to match:
+
+- `Launch` has `rocket` (nullable), `mission`, `net` and `status` (nullable); it has no provider and no pad. Page 610 shows the rocket where the design said `<provider>, <pad>`.
+- `REGISTRY` is the code's 29 entries plus 666 (answer 5), so 30; every count of 29 in the design is now 30, and the "other 28" is "other 29".
+- `SERIES_SYMBOLS` is exported from `src/sources/source-requests.ts`, not from `cities.ts`.
+- `NonEmpty` and `toNonEmpty` are `src/grid/types.ts` and `src/grid/non-empty.ts`. `Rows` and `ValidContent` are in `src/grid/types.ts`.
+- `HnStory.score` and `comments` are nullable, `Quake.magnitude`, `place` and `depthKm` are nullable, and `CityWeather` fields are nullable, so every formatter input already allows `null`.
+- Requirement 1.2 allows `import type` only from `src/sources`, but the design lists `CITIES`, `REGIONS`, `OUTLOOK_CITY_IDS` and `SERIES_SYMBOLS` as values the compilers use. The rule stands: `src/compilers/city-data.ts` holds the same lists with their types taken from `src/sources`, and `test/compilers/city-data.test.ts` fails when either side changes alone.
+- `checkCompiledPage` returns `CompiledProblem[]` with the codes `number`, `subpage-count`, `editor`, `table-width` and `alt-missing`; `compileAll` maps each to `page-check`.
 
 ## Decisions where steering is silent
 
@@ -132,7 +156,7 @@ Spec for `src/compilers`: the shared formatters, text fitting, content builder, 
 
 7.2 EACH compiler SHALL be pure: it reads no clock, mutates no input, and equal inputs give deep-equal results.
 
-7.3 THE compiled page SHALL have its PageDef's number, 1 to 9 subpages, `editor` `rules` (`static` for 800, 801 and 899), and `dataAt` equal to `new Date(entry.fetchedAt)` of its source, `now` for 601 and 802, and `null` for 100, the static pages and every no-data page.
+7.3 THE compiled page SHALL have its PageDef's number, 1 to 9 subpages, `editor` `rules` (`static` for 666, 800, 801 and 899), and `dataAt` equal to `new Date(entry.fetchedAt)` of its source, `now` for 601 and 802, and `null` for 100, the static pages (666, 800, 801, 899) and every no-data page.
 
 7.4 EACH compiler SHALL fold every source text with `foldText` before use, AND SHALL skip an item whose text does not fold as if the source had not given it.
 
@@ -146,7 +170,7 @@ Spec for `src/compilers`: the shared formatters, text fitting, content builder, 
 
 **User story:** As the ai-editor spec, I want the AI pages split at the point where text is shortened, so that a model draft and the rules draft are laid out and checked by the same code.
 
-8.1 THE modules for 110, 111 to 118, 500, 501 and 700 SHALL export `editorialInput(data)`, `rulesDraft(input)` and `assemble(data, rows, now)`, AND their compiler SHALL equal `assemble(data, rulesDraft(editorialInput(data)), now)`.
+8.1 THE modules for 110, 111 to 118, 500, 501 and 700 SHALL export `editorialInput(data)`, `rulesDraft(input)` and `assemble(data, rows)`, AND their compiler SHALL equal `assemble(data, rulesDraft(editorialInput(data)))`. (Amended in implementation: these pages take their time from the source entry, so `now` is not a parameter; lint rejects an unused one.)
 
 8.2 THE `editorialInput` SHALL return `{ page, slots, totalRows }`, where each slot has a stable `id`, `mode` (`headline` or `body`), folded `text`, `maxRows` and `width`, in layout order, and `totalRows` bounds the rows of all slots together.
 
@@ -178,7 +202,7 @@ Spec for `src/compilers`: the shared formatters, text fitting, content builder, 
 
 ## Requirement 12: Exchange rates (300, 301)
 
-12.1 THE page 300 SHALL list the `SERIES_SYMBOLS` currencies in that order with name, code, rate per US dollar and change on the day, where the change is `(latest / previous − 1) × 100` and `previous` is the last series point dated before `Rates.date`, or `n/a` when there is none.
+12.1 THE page 300 SHALL list the `SERIES_SYMBOLS` currencies in that order with name, code, rate per US dollar and change on the day, where the change is `(latest / previous − 1) × 100` and `previous` is the last series point dated before `Rates.date`, or `n/a` when there is none; AND below them a block headed `Other rates` with code and rate per US dollar, and no change (its text alternative also names each currency), for the codes AUD, CAD, CHF, SEK, NOK, MXN, BRL, SGD, HKD and ZAR in that order, leaving out a code that `Rates.rates` does not hold.
 
 12.2 THE page 301 SHALL have one subpage per `SERIES_SYMBOLS` currency with at least 2 series points, each with a line chart of the points, the first and last dates, and the latest, highest and lowest rates with their dates. WHEN no currency has 2 points, it SHALL show the no-data page.
 
@@ -208,13 +232,13 @@ Spec for `src/compilers`: the shared formatters, text fitting, content builder, 
 
 16.2 THE page 802 SHALL show whether the AI editor is on, model calls used and the cap, drafts accepted and rejected today, and for every registry page its compile time (`HH:MM`, column header with `UTC`) and editor, `n/a` where the status has no entry.
 
-## Requirement 17: Static pages (800, 801, 899)
+## Requirement 17: Static pages (666, 800, 801, 899)
 
 17.1 THE function `compileStatic(number, text)` SHALL parse the text with `parseContent`, validate it with `validateContentRows`, and return failure with every error when either fails.
 
 17.2 THE alt blocks of a static page SHALL follow the design rule "Static alt" and nothing else.
 
-17.3 THE repository SHALL contain `pages/800.page`, `pages/801.page` and `pages/899.page` as the placeholders in the design, AND a test SHALL compile every file in `pages/` and fail on any name that is not a static page in `REGISTRY`.
+17.3 THE repository SHALL contain `pages/666.page`, `pages/800.page`, `pages/801.page` and `pages/899.page` as the placeholders in the design, AND a test SHALL compile every file in `pages/` and fail on any name that is not a static page in `REGISTRY`.
 
 ## Requirement 18: compileAll
 

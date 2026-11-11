@@ -39,13 +39,14 @@ describe("package.json (requirement 1.1 to 1.5; pages-and-sources 1.1)", () => {
     expect(pkg.engines).toEqual({ node: ">=20.19.0" });
   });
 
-  it("defines exactly the five scripts", () => {
+  it("defines exactly the five grid-core scripts and grid:check (rule-compilers 1.1)", () => {
     expect(pkg.scripts).toEqual({
       build: "tsc -p tsconfig.build.json",
       test: "vitest run",
       typecheck: "tsc --noEmit",
       lint: "eslint . && prettier --check .",
       format: "prettier --write .",
+      "grid:check": "tsx scripts/grid-check.ts",
     });
   });
 

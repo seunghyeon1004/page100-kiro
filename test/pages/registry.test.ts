@@ -208,6 +208,17 @@ const EXPECTED: readonly Row[] = [
     ["Article", 700],
   ],
   [
+    666,
+    "Back from the dead",
+    "RESURRECTION",
+    "static",
+    "static",
+    ["Index", 100],
+    ["News", 110],
+    ["Moon", 601],
+    ["Help", 800],
+  ],
+  [
     700,
     "Featured article",
     "FEATURED ARTICLE",
@@ -266,7 +277,7 @@ const EXPECTED: readonly Row[] = [
 
 const NUMBERS = [
   100, 110, 111, 112, 113, 114, 115, 116, 117, 118, 120, 200, 201, 300, 301, 400, 401, 402, 500,
-  501, 550, 600, 601, 610, 700, 800, 801, 802, 899,
+  501, 550, 600, 601, 610, 666, 700, 800, 801, 802, 899,
 ];
 
 function isRepertoireText(text: string): boolean {
@@ -274,9 +285,9 @@ function isRepertoireText(text: string): boolean {
 }
 
 describe("REGISTRY (requirement 2)", () => {
-  it("holds exactly the 29 numbers in ascending order (2.1)", () => {
+  it("holds exactly the 30 numbers in ascending order (2.1)", () => {
     expect(REGISTRY.map((d) => d.number)).toEqual(NUMBERS);
-    expect(NUMBERS).toHaveLength(29);
+    expect(NUMBERS).toHaveLength(30);
   });
 
   it("matches the design table row by row (2.2)", () => {
@@ -328,15 +339,15 @@ describe("REGISTRY (requirement 2)", () => {
     }
   });
 
-  it("has editor static exactly for 800, 801 and 899 (2.5)", () => {
+  it("has editor static exactly for 666, 800, 801 and 899 (2.5)", () => {
     expect(REGISTRY.filter((d) => d.editor === "static").map((d) => d.number)).toEqual([
-      800, 801, 899,
+      666, 800, 801, 899,
     ]);
   });
 
-  it("has source static for 100, 800, 801, 899 and computed for 601 and 802 (2.5)", () => {
+  it("has source static for 100, 666, 800, 801, 899 and computed for 601 and 802 (2.5)", () => {
     expect(REGISTRY.filter((d) => d.source === "static").map((d) => d.number)).toEqual([
-      100, 800, 801, 899,
+      100, 666, 800, 801, 899,
     ]);
     expect(REGISTRY.filter((d) => d.source === "computed").map((d) => d.number)).toEqual([
       601, 802,

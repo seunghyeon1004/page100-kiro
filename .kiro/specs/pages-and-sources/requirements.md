@@ -60,7 +60,7 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 
 **User story:** As the server and the compilers, I want one table of every in-service page, so that numbers, banners, sources and links are defined once.
 
-2.1 THE module `src/pages/registry.ts` SHALL export `REGISTRY`, frozen at every level, holding exactly the 29 numbers 100, 110 to 118, 120, 200, 201, 300, 301, 400, 401, 402, 500, 501, 550, 600, 601, 610, 700, 800, 801, 802 and 899, in ascending order.
+2.1 THE module `src/pages/registry.ts` SHALL export `REGISTRY`, frozen at every level, holding exactly the 30 numbers 100, 110 to 118, 120, 200, 201, 300, 301, 400, 401, 402, 500, 501, 550, 600, 601, 610, 666, 700, 800, 801, 802 and 899, in ascending order.
 
 2.2 EACH PageDef SHALL have `number`, `title`, `banner`, `source`, `editor` and `links` with the values in the table in `design.md`, "Registry".
 
@@ -68,7 +68,7 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 
 2.4 EACH PageDef SHALL have exactly four links, for red, green, yellow and blue in that order, each with a label of 1 to 8 repertoire characters with no leading or trailing space, and a target page that is in service and is not the page's own number.
 
-2.5 THE `editor` SHALL be `static` exactly for 800, 801 and 899, AND THE `source` SHALL be `static` exactly for 100, 800, 801 and 899 and `computed` exactly for 601 and 802.
+2.5 THE `editor` SHALL be `static` exactly for 666, 800, 801 and 899, AND THE `source` SHALL be `static` exactly for 100, 666, 800, 801 and 899 and `computed` exactly for 601 and 802.
 
 2.6 THE function `findPage(n: number)` SHALL return the PageDef whose number is n, or `undefined`, for any number.
 
@@ -181,6 +181,8 @@ Spec for `src/pages` (registry, text alternative and compiled page models, frame
 12.5 EVERY normalised text field SHALL be plain text: tags removed and the entities `&amp; &lt; &gt; &quot; &#39;` and numeric references decoded where the fixture shows markup. Normalisers do not fold text (compilers do).
 
 12.6 THE `fetchedAt` SHALL be `now.toISOString()`, AND no source module SHALL read the clock.
+
+12.7 (added by rule-compilers owner answer 4, 2026-11-11) THE on-this-day normaliser SHALL keep, in each of `events`, `births` and `deaths`, the first 40 entries in the order the response gives them and every later entry that the response's `selected` list also holds (same year and same text), AND each kept `DayEntry` SHALL hold only `year` and `text`. This keeps the boot snapshot small (529,001 bytes before, 118,502 after).
 
 ## Requirement 13: Per-source rules
 

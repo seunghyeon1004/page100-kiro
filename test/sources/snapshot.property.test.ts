@@ -17,11 +17,7 @@ const iso = fc
   .map((d) => d.toISOString());
 
 const articleRef = fc.record({ title: text, extract: nullable(text), url: nullable(text) });
-const dayEntry = fc.record({
-  year: num,
-  text,
-  articles: fc.array(articleRef, { maxLength: 2 }),
-});
+const dayEntry = fc.record({ year: num, text });
 const dayEntries = fc.array(dayEntry, { maxLength: 3 });
 const forecast = fc.record({
   date: text,

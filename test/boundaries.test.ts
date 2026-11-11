@@ -215,3 +215,82 @@ describe("type and lint escapes (requirement 20.2, amended by pages-and-sources 
     }
   });
 });
+
+describe("compiler boundaries (rule-compilers 1.2 to 1.4)", () => {
+  /** Each import or re-export statement of a file: its specifier and whether it is `import type` / `export type`. */
+  function importStatements(source: string): { specifier: string; typeOnly: boolean }[] {
+    const found: { specifier: string; typeOnly: boolean }[] = [];
+    for (const match of source.matchAll(
+      /\b(import|export)(\s+type)?\b[^;]*?\bfrom\s+["']([^"']+)["']/g,
+    )) {
+      if (match[3] !== undefined)
+        found.push({ specifier: match[3], typeOnly: match[2] !== undefined });
+    }
+    return found;
+  }
+
+  const compilerFiles = tsFiles("src/compilers");
+
+  it("lets src/compilers import only src/compilers, src/grid, src/markup, src/pages and, type-only, src/sources (1.2)", () => {
+    for (const file of compilerFiles) {
+      const source = read(file);
+      for (const { specifier, typeOnly } of importStatements(source)) {
+        const target = resolvedTarget(file, specifier);
+        const allowed =
+          isInside(target, "src/compilers") ||
+          isInside(target, "src/grid") ||
+          isInside(target, "src/markup") ||
+          isInside(target, "src/pages") ||
+          (typeOnly && isInside(target, "src/sources"));
+        expect(allowed, `${file} imports ${specifier}`).toBe(true);
+      }
+      expect(specifiers(source).length, `${file} has an import form the scan misses`).toBe(
+        importStatements(source).length,
+      );
+    }
+  });
+
+  it("keeps the clock, randomness, globals, fetch and the model SDK out of src/compilers (1.3)", () => {
+    const banned = [
+      /\bDate\.now\b/,
+      /\bnew Date\(\s*\)/,
+      /\bMath\.random\b/,
+      /\bprocess\b/,
+      /\bglobalThis\b/,
+      /(?<![.\w])fetch\s*\(/,
+      new RegExp("@anthropic-ai" + "/sdk"),
+    ];
+    for (const file of compilerFiles) {
+      const source = read(file);
+      for (const pattern of banned) {
+        expect(pattern.test(source), `${file} matches ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+
+  it("keeps number formatting calls and Intl in format.ts alone (1.4)", () => {
+    const banned = [
+      new RegExp("toFixed" + "\\("),
+      new RegExp("toPrecision" + "\\("),
+      new RegExp("toLocaleString" + "\\("),
+      new RegExp("\\bIntl" + "\\."),
+    ];
+    for (const file of compilerFiles.filter((f) => f !== "src/compilers/format.ts")) {
+      const source = read(file);
+      for (const pattern of banned) {
+        expect(pattern.test(source), `${file} matches ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+
+  it("lets no file in src/grid, src/markup, src/pages or src/sources import src/compilers (1.4)", () => {
+    for (const dir of ["src/grid", "src/markup", "src/pages", "src/sources"]) {
+      for (const file of tsFiles(dir)) {
+        for (const specifier of specifiers(read(file))) {
+          const target = resolvedTarget(file, specifier);
+          expect(isInside(target, "src/compilers"), `${file} imports ${specifier}`).toBe(false);
+        }
+      }
+    }
+  });
+});

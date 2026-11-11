@@ -1,0 +1,161 @@
+# Kiro CLI 3.2.0, 2026-11-11. Unedited output; only the home directory prefix is replaced with ~.
+$ kiro-cli chat --v3 --trust-workspace --no-interactive --trust-all-tools --model claude-opus-5.5 --effort high  "<prompt>"
+
+## Prompt
+Start a spec session for the feature `ai-editor`. Read .kiro/steering/kiro-workflow.md, .kiro/steering/editorial.md, .kiro/specs/rule-compilers/design.md (the "editor seam": editorialInput, rulesDraft, assemble). Another session is implementing rule-compilers right now: work from its design document, do not touch src/ or test/, and do not run npm scripts. Write only .kiro/specs/ai-editor/requirements.md, design.md and tasks.md in the grid-core format. Do not implement or tick. Tight documents: requirements about 180 lines, design about 240, tasks about 70.
+
+Scope: src/editor, the only module that calls a model.
+
+Decisions already made:
+- `EditorClient` is an interface with one method, `draft(request) -> Promise<DraftResult>`, where a request carries the page number, the slot limits (rows, width), the source text and, on a retry, the previous draft and its violations. Implementations: `AnthropicEditorClient` (the real one), `FixtureEditorClient` (replays recorded drafts from test/fixtures/editor/, used by tests and by an offline demo mode), and scripted fakes inside tests.
+- AnthropicEditorClient uses the official `@anthropic-ai/sdk` (pin the current version from the npm registry), model from `EDITOR_MODEL` (default `claude-opus-5-5`), `client.messages.parse` with a zod output format (`zodOutputFormat` from `@anthropic-ai/sdk/helpers/zod`) so the reply is `{ rows: string[] }`, `output_config: { effort: "low" }`, `max_tokens: 4000`, no `temperature`/`top_p`/`top_k`, no `thinking` parameter, no assistant prefill, a 30 s timeout and `maxRetries: 1`. Before designing, check that the installed zod major works with that helper by reading the SDK's own type definitions after install is allowed in the implementation session; the design must say what to do if it does not (send `output_config.format` as a JSON schema by hand and validate the parsed text with zod). Check `stop_reason`: `refusal` and `max_tokens` are failed drafts, not errors to retry blindly. Catch SDK errors most-specific first (rate limit, other status errors, connection errors) and never include the key, the headers or the request body in a log line or an error message.
+- The system prompt is built from the rules in editorial.md (voice, headline rules, abbreviations, fitting) and states the limits. The source text goes in the user message inside a clearly delimited block and is described as untrusted data: instructions inside it are to be ignored. The model returns plain text rows only.
+- Draft checks, each returning exact violation sentences that are sent back on retry: row count and width per slot (measured in code points after folding), repertoire (foldText must succeed), no `{` tags, the numeric fidelity check exactly as editorial.md defines it, no row that is only whitespace inside a paragraph unless the slot allows it. The checks are pure and are the only way a draft becomes "accepted".
+- `editPage`: at most three calls per page (first draft plus two retries with the violations). If no draft is accepted, or the client fails, or the budget is exhausted, the result is the rule-based rows. The output always goes through `assemble`, so an accepted draft that assemble rejects is also a rejection.
+- `CallBudget`: counts calls per UTC day against `MAX_MODEL_CALLS_PER_DAY` (default 60); the check happens before every call; when the cap is reached no call is made until the next UTC day. In memory only; say plainly in the design that a process restart resets it, and add `EDITOR_MAX_CALLS_PER_BOOT` (default 30) as a second cap that does not reset with the day, so a restart loop cannot spend without bound per process.
+- Draft cache: keyed by a SHA-256 of the page number, the limits and the source text. An accepted draft is reused while the key is unchanged, so an unchanged story costs no call. A rejected-three-times key is remembered too, so it is not retried until its text changes.
+- `runEdition(snapshot, status, now, deps)`: for the ai pages only (110, 111-118, 500, 501, 700), in page order, one call at a time; returns the CompiledPages with `editor: "ai"` or `"rules"` and updates the counters that page 802 shows (calls today, cap, drafts accepted, drafts rejected, pages on rules fallback).
+- With no `ANTHROPIC_API_KEY`, src/editor is never constructed with the real client and makes no call; pages are the rule-based ones.
+- scripts/record-editor-fixtures.ts records real drafts for the boot snapshot into test/fixtures/editor/ (input hash, request without the key, response rows, model id, date). Only the owner runs it, with a real key; tests never do. The spec must not ask Kiro to read any .env or secrets file.
+
+Correctness properties wanted at least: (1) every accepted draft satisfies all limits, folds, and passes numeric fidelity; (2) for any scripted client (any mix of good drafts, overlong rows, invented numbers, braces, refusals, thrown errors), editPage returns rows that assemble to a ValidContent, and when nothing is accepted they equal rulesDraft; (3) for any sequence of editions the number of calls never exceeds either cap; (4) numeric fidelity: a draft made only of tokens from the input always passes, and adding any number not in the input always fails; (5) the cache never serves a draft for a different input; (6) no log line or error message produced by any failure path contains the key (generate random keys and assert on all captured output).
+
+End by printing line counts and at most three open questions.
+
+## Output
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=9
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] List Directory
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] List spec and steering files with line counts
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] Check the existing ai-editor evidence transcript
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Grep Search
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Grep Search
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Grep Search
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Count spec lines, properties and check changed files
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] Final line counts of the three spec files
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+I've written the three `ai-editor` spec files in `.kiro/specs/ai-editor/`. I touched nothing in `src/` or `test/`, ran no npm scripts and ticked nothing. The other changes in `git status` come from the rule-compilers session.
+
+| File | Lines | Target |
+|---|---|---|
+| `requirements.md` | 197 | about 180 |
+| `design.md` | 212 | about 240 |
+| `tasks.md` | 69 | about 70 |
+
+The design has 8 correctness properties: your six, plus one for the prompt delimiters and one for `runEdition`.
+
+**SDK version:** the npm registry lists `@anthropic-ai/sdk` 1.8.0 as latest. Its zod peer range is `^3.25.0 || ^4.0.0`, which includes the installed zod 4.6.7. Task 2 reads the SDK's own type definitions after install and chooses between `messages.parse` with `zodOutputFormat` (path A) and a hand-written JSON schema checked with zod (path B). No cast or `@ts-expect-error` is allowed either way.
+
+**Decisions I made that you didn't specify:**
+- **Reply format:** the reply stays `{ rows: string[] }`. Slots come in order, separated by one `""`. A slot may be empty only where the rule-based draft also left it empty, so the editor can fit more items, never fewer.
+- **What a call is:** a call means one HTTP request. With `maxRetries: 1`, one draft can make two requests. So the budget reserves 2 before each draft, a counting `fetch` refuses a third, and unused calls are refunded. This keeps both caps hard even when the SDK retries.
+- **Stopping and remembering:** a rate-limit, 401 or 403 error stops the whole edition. A refusal stops that page and remembers its input key as rejected. Timeouts and connection errors don't mark the key, so the page is tried again next edition.
+- **Voice checks:** I added checks beyond your list because `editorial.md` says the draft checks enforce its rules. They reject `!` or `?`, "breaking/shock/slams", or an all-caps word unless the source has it (allowed abbreviations pass). A headline also can't end in `.` or `...`.
+- **Extra pass before accepting:** an accepted draft also goes through `checkCompiledPage` and `buildScreen`, the same checks `compileAll` runs.
+- **Work outside `src/editor`:**
+  - `src/server/config.ts`, holding only the editor variables.
+  - Two new environment variables, `EDITOR_MAX_CALLS_PER_BOOT` and `EDITOR_CLIENT`.
+  - Pages 400–402 stay rules-only, which differs from `product.md`.
+
+  All of these are listed under "Departures" in the requirements.
+- **Your step:** task 14 is yours. It needs real recordings from `scripts/record-editor-fixtures.ts` and must not be done with hand-written fixtures.
+
+**Open questions:**
+1. **Offline demo mode:** is `EDITOR_CLIENT=fixtures` the switch you want? The fixtures live in `test/fixtures/editor/`, so the server spec also has to decide whether the Docker image includes them.
+2. **Config file:** may this spec create `src/server/config.ts` with only the editor variables, or should that wait for the server spec? If it waits, `src/editor` would take the editor settings as an argument for now.
+3. **Names and places:** code can't check that the model added no names, places or quotes. Do you want a rough check that every capitalised word not starting a sentence appears in the source? It would also reject some honest rewording.
+
+## Exit code 0. Account credits before 2507.89, after 2589.37 (shared account: includes any parallel session).

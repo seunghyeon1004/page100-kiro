@@ -1,0 +1,251 @@
+# Kiro CLI 3.2.0, 2026-11-11. Unedited output; only the home directory prefix is replaced with ~.
+$ kiro-cli chat --v3 --trust-workspace --no-interactive --trust-all-tools --model claude-opus-5.5 --effort high  "<prompt>"
+
+## Prompt
+Start a spec session for the feature `server-and-viewer`. Read .kiro/steering/kiro-workflow.md and .kiro/steering/frontend.md, the designs of rule-compilers and ai-editor in .kiro/specs/, and the code in src/ (another session is implementing rule-compilers right now: do not touch src/, test/ or public/, and do not run npm scripts). The ai-editor spec takes its settings as an argument; src/server/config.ts belongs to this spec and includes EDITOR_CLIENT (`anthropic` | `fixtures` | `off`). Write only .kiro/specs/server-and-viewer/requirements.md, design.md and tasks.md in the grid-core format. Do not implement or tick. Tight documents: requirements about 260 lines, design about 320, tasks about 90. Cite steering rather than restating it. This merges the planned `server` and `frontend` specs and the deploy files.
+
+Scope and decisions already made:
+
+A. src/server
+- config.ts: environment read once and validated with zod: PORT (3000), ANTHROPIC_API_KEY (optional), EDITOR_MODEL, MAX_MODEL_CALLS_PER_DAY, EDITOR_MAX_CALLS_PER_BOOT, REFRESH (default on; `off` serves the boot snapshot only, used by tests and e2e), PUBLIC_ORIGIN (optional, for the User-Agent URL).
+- store.ts: the only holder of published pages. `publish(compiled)` frames every subpage through buildScreen and keeps the page only if every screen is a ValidPage and alt agreement holds; otherwise the previous version stays and the failure is counted. Readers get immutable `PublishedPage` values (screens as ValidPage, alt blocks, etag, compiledAt, dataAt, stale, editor).
+- scheduler.ts: at boot, load the bundled snapshot, compileAll, publish, and only then start listening. Then per-source refresh on the intervals in src/sources/schedule.ts with jitter; after each successful refresh recompile and publish the affected pages; after the rule pages are published, run the editor edition in the background if a key is configured and publish its pages. Staleness as sources.md defines. Timers are injected so tests use fake time. No request handler ever calls a source or the editor (a test asserts this by giving handlers a store only).
+- renderers, each a pure function of a PublishedPage and options: html (complete document), frag (the part the client swaps: screen, text alternative, page metadata as data attributes), txt (24 lines of 40 characters, mosaics as Unicode), ansi (24-bit colour escape codes, reset at each line end), json (page number, title, subpages with rows as markup strings and the alt blocks, times). Cells are grouped into runs of equal attributes; colours are classes; no style attributes. Concealed runs get a class and are also hidden from the txt and ansi outputs unless `?reveal=1`.
+- The HTML document: the grid as `aria-hidden` rows of spans; the text alternative rendered from AltBlocks as real HTML (h1, p, ul/ol, table with th scope, a, details for concealed); the no-JavaScript controls from frontend.md (form to /go, previous/next page and subpage links, the four quick links, the reveal checkbox, a link to the text view); a keypad that is `hidden` until the script shows it; one polite live region; `<title>` as frontend.md says; a meta description; an inline-free head that links one CSS file, one JS file (defer) and preloads the font.
+- Row 0 on a served page shows the request time; the client script then ticks the clock every second in the viewer's local time and shows partially typed digits. ETags exclude the clock. `?s=N` selects a subpage (1-based; out of range is a 404 screen).
+- router: `/` (page 100), `/:page`, `/:page.txt`, `/:page.ansi`, `/:page.json`, `/:page.frag`, `/go?p=`, `/api/health` (200 once the store has pages), `/api/status` (JSON: per-page compiledAt, editor, stale, plus the editor counters), `/assets/*` (content-hashed names, immutable caching), `/robots.txt`, `/favicon.svg` (a small SVG, no image files). Only GET and HEAD; anything else 405. User agents starting `curl/` or `Wget/` get ANSI from `/:page`. Not-in-service numbers return the not-in-service screen in the requested format with status 404; non-numbers return a plain 404 page. Path handling never touches the file system except for the fixed asset table built at boot.
+- headers: the exact CSP and security headers in frontend.md on every response; brotli or gzip chosen from Accept-Encoding, with compressed bodies cached per etag; `Vary: Accept-Encoding, User-Agent` on `/:page`; ETag and 304 handling; `Cache-Control: public, max-age=60` for pages.
+- main.ts: wiring, graceful shutdown on SIGTERM, one log line per refresh and per edition (never a key, never a full body).
+
+B. public/ (client script and CSS, no build step, no framework, no dependencies)
+- app.js as an ES module in plain JavaScript with JSDoc types, checked by `tsc` through a `public/tsconfig.json` with checkJs. Everything in frontend.md's keyboard map and keypad; navigation swaps in `/:page.frag` with fetch, updates the URL with history.pushState, handles Back/Forward, and falls back to a normal navigation if the fetch fails. Rotation every 12 s when a page has subpages; Hold; no rotation under reduced motion. Reveal. Text view toggle showing the same text alternative element. A page number that is not in service shows the server's not-in-service screen without leaving the viewer. While three digits are being typed the header shows them (`P2--`).
+- app.css: the screen is 40 columns by 24 rows of the Bedstead Extended subset font already in public/fonts (advance 0.75em, line-height 1, so the screen is 30em by 24em, a 5:4 shape: this replaces the "4:3" in frontend.md and the brief; list it under Departures). It scales with the viewport using container query units so it is as large as fits without scrolling on a desktop and full width on a phone with the keypad below. Separated mosaics are drawn with the font's separated sextant glyphs (U+1CE51 + bits - 1). Tokens as custom properties; the eight grid colours exactly as grid-rules.md; the page around the screen is near-black and quiet. Focus styles as frontend.md. `prefers-reduced-motion`, `forced-colors` and print styles (print shows the text alternative).
+- A font coverage test: public/fonts/bedstead-extended-subset.coverage.json contains every code point of REPERTOIRE, the 63 mosaic code points and the 63 separated ones.
+
+C. Byte budgets and checks
+- scripts/payload.ts and the `payload` npm script: start the app in-process with REFRESH=off, request `/100` and every asset it references with `Accept-Encoding: br`, and every page's html and frag; print a table and fail on any budget in frontend.md. A vitest test runs the same measurement function. Tighten the budgets in frontend.md to what the design can justify (the font is 4,624 bytes) and say so under Departures.
+- test/e2e with @playwright/test (Chromium only, headless; pin the version; the owner installs the browser with `npx playwright install chromium`): typing three digits changes page; arrow keys; Hold and rotation with a fake clock; Reveal on 550; the text view; the phone viewport shows the keypad and tapping it navigates; with JavaScript disabled the form and links work; no request leaves the origin; no console errors; an axe-free accessibility check written by hand (one h1, grid aria-hidden, live region present, every button has a name, focus visible). scripts/screenshots.ts saves desktop and phone screenshots of a list of pages to docs/screens/.
+- `npm run e2e` starts the built server itself on a free port with REFRESH=off.
+
+D. Deploy files
+- Dockerfile (two stages on node:22-slim: build with dev dependencies, runtime with `npm ci --omit=dev`, copies dist, public, pages and the snapshot; HEALTHCHECK on /api/health; `CMD ["node","dist/server/main.js"]`), .dockerignore, render.yaml (free plan, docker runtime, healthCheckPath, ANTHROPIC_API_KEY as `sync: false`, the caps with their defaults), .env.example. Docker is not available on this machine: the design must give a way to prove the runtime layout without Docker (a script that copies exactly what the Dockerfile copies into a temp directory, runs `npm ci --omit=dev` there and starts the server), and a test that the list of copied paths in that script and in the Dockerfile agree.
+
+Correctness properties wanted at least: (1) for every published page and subpage, txt output is exactly 24 lines of 40 code points and parses back (through the markup-free path you define) to the same characters as the grid; (2) html run-grouping loses nothing: the concatenated text of the grid spans equals the txt output, for all valid grids generated by the grid-core arbitraries; (3) every byte of html output for arbitrary page content is free of unescaped `<`, `&` or quotes from data (generate hostile strings within the repertoire); (4) the store never holds an invalid page for any sequence of publish calls with valid and invalid inputs; (5) the router never throws and always answers with one of a fixed set of statuses for arbitrary request paths and methods; (6) etag equality iff content equality (clock excluded); (7) ansi output stripped of escape codes equals txt output.
+
+End by printing line counts and at most three open questions.
+
+## Output
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=9
+[tool] status: Completed
+[tool] List Directory
+[tool] status: InProgress
+[tool] status: Completed
+[tool] List spec and steering files with line counts
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] List project source files and package details
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Read core type and frame builder modules
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] Read lookup, not-in-service, schedule and snapshot modules
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] List exports of modules the server will use
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read build configs, boundaries test and server references in specs
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read remaining spec sections and grid arbitraries exports
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Check Playwright version and frame and registry code
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+[tool] Fetch URL
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Check registry helpers and colour letters
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+Now the requirement fixes I noted (scope of 1.3, the edition race in 6.3, rotation and text view in 12.7, the app root in 3.1).
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Count spec lines and properties
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Read File
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Replace in File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Find requirement references to renumber in design
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] List property Validates lines and boot reference
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] Renumber requirement references in design
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Failed: Renumber requirement references in design
+[tool] Write File
+[tool] status: Pending
+[tool] status: Completed
+[tool] Final line counts and cross-reference check
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[tool] status: Completed
+I've written the three spec files for `server-and-viewer`, following the grid-core format. Nothing is implemented or ticked. I made no changes outside the three files and ran no npm scripts. I did run `npm view @playwright/test` to pin the version (1.65.0) and checked Render's docs.
+
+Four decisions in the spec go beyond what you specified, so check them:
+
+- **Clock and compression:** because row 0 shows the request time, every body is different each second. The compressed-body cache is therefore keyed by ETag plus the clock text, with one entry per ETag and encoding.
+- **Editor pages and newer data:** an editor page is published only if its source data hasn't changed since the editor run started. Otherwise a slow run could overwrite newer rule pages with older data.
+- **`REFRESH=off`:** it compiles at the snapshot time, so tests, `payload` and screenshots give the same output every run.
+- **Departures beyond the ones you named:**
+  - The favicon conflicts with "no images" in `frontend.md`.
+  - The reveal CSS selector changes to `#reveal:checked ~ .view .conceal`, because the checkbox sits outside the swapped region.
+  - The on-this-day jitter is capped at 300 s instead of 10% of a day.
+  - `createHttpClient` gets an optional `userAgent`, built from `PUBLIC_ORIGIN`.
+
+The design has 9 correctness properties: your 7, plus one for the refresh schedule and one for compression. Task 21 expects 61 property tests in total.
+
+| File | Lines |
+|---|---|
+| `requirements.md` | 277 |
+| `design.md` | 321 |
+| `tasks.md` | 89 |
+
+Open questions:
+
+1. **The daily model-call cap isn't hard on Render's free plan.** A free instance spins down after 15 minutes without traffic, and each wake is a new process. The ai-editor call budget is per process, so a day with 10 wakes could make up to 300 calls instead of 60. Should we accept that, lower `EDITOR_MAX_CALLS_PER_BOOT`, or skip the editor run at boot?
+2. **The moon disc is about 6% narrower than tall on a 5:4 screen.** The rule-compilers design sizes it for 4:3: its horizontal radius is 7.5 pixels, which is 2.81em on screen, against 3em vertically. Changing the divisor in `u` from 7.5 to 8 fixes it, but that file belongs to the session implementing rule-compilers. Should I raise it there?
+3. **`.env.example` matches the `.env.*` pattern** that `tech.md` rule 2 and the planned guard hook forbid me to touch. The spec has `scripts/env-example.ts` print the file and you write it. Is that how you want it, or should `.env.example` be exempted by name?
+
+## Exit code 0. Account credits before 2589.37, after 2746.66 (shared account: includes any parallel session).

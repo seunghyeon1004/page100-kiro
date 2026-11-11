@@ -12,7 +12,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "grid:check": "tsx scripts/grid-check.ts"
   },
   "devDependencies": {
     "@types/node": "20.19.43",

@@ -29,33 +29,62 @@ describe("parseWikimediaOnThisDay on recorded fixtures (requirements 12.1, 18.1)
     },
   );
 
-  it("reads the list sizes and first entries of 2026-11-11-onthisday", () => {
+  it("keeps 40 events, 40 births and 40 deaths of 74, 233 and 115, the first 40 of each in feed order (owner answer 4)", () => {
     const result = parseWikimediaOnThisDay(recorded("wikimedia-onthisday", BASE));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const { events, births, deaths } = result.value;
-    expect([events.length, births.length, deaths.length]).toEqual([74, 233, 115]);
-    expect(events[0]).toMatchObject({
+    expect([events.length, births.length, deaths.length]).toEqual([40, 40, 40]);
+    expect(events[0]).toEqual({
       year: 2024,
       text: "A vehicle-ramming attack in Zhuhai, China, kills 38 people and injures 48.",
     });
-    expect(events[0]?.articles).toHaveLength(2);
-    expect(events[0]?.articles[0]?.title).toBe("2024 Zhuhai car attack");
-    expect(births[0]).toMatchObject({ year: 2005, text: "Ben Gannon-Doak, Scottish footballer" });
-    expect(births[0]?.articles[0]?.title).toBe("Ben Gannon-Doak");
+    expect(births[0]).toEqual({ year: 2005, text: "Ben Gannon-Doak, Scottish footballer" });
     expect(deaths[0]?.year).toBe(2024);
   });
 
-  it("gives every entry article an extract and a URL", () => {
+  it("keeps the recorded order: each kept list is a prefix of the wire list", () => {
+    const body = recorded("wikimedia-onthisday", BASE) as Record<
+      string,
+      { year: number; text: string }[]
+    >;
+    const result = parseWikimediaOnThisDay(body);
+    if (!result.ok) throw new Error("fixture did not parse");
+    for (const key of ["events", "births", "deaths"] as const) {
+      const wire = (body[key] ?? []).slice(0, 40).map(({ year, text }) => ({ year, text }));
+      expect(result.value[key]).toEqual(wire);
+    }
+  });
+
+  it("keeps only year and text on each item, and no linked article", () => {
     const result = parseWikimediaOnThisDay(recorded("wikimedia-onthisday", BASE));
     if (!result.ok) throw new Error("fixture did not parse");
     for (const list of [result.value.events, result.value.births, result.value.deaths]) {
-      for (const entry of list) {
-        for (const article of entry.articles) {
-          expect(typeof article.extract).toBe("string");
-          expect(article.url?.startsWith("https://en.wikipedia.org/wiki/")).toBe(true);
-        }
-      }
+      for (const entry of list) expect(Object.keys(entry).sort()).toEqual(["text", "year"]);
+    }
+  });
+
+  it("keeps an entry after the 40th when the selected list holds the same year and text", () => {
+    const entry = (i: number) => ({ year: 1000 + i, text: `Event ${String(i)}`, pages: [] });
+    const events = Array.from({ length: 50 }, (_, i) => entry(i));
+    const kept = parseWikimediaOnThisDay({
+      events,
+      births: [],
+      deaths: [],
+      selected: [entry(44), { year: 1044, text: "Other text", pages: [] }],
+    });
+    expect(kept.ok).toBe(true);
+    if (!kept.ok) return;
+    expect(kept.value.events).toHaveLength(41);
+    expect(kept.value.events.at(-1)).toEqual({ year: 1044, text: "Event 44" });
+    expect(kept.value.events[39]).toEqual({ year: 1039, text: "Event 39" });
+  });
+
+  it("keeps exactly 40 of 41 entries when selected is absent or empty", () => {
+    const events = Array.from({ length: 41 }, (_, i) => ({ year: i, text: `E${String(i)}` }));
+    for (const selected of [undefined, []]) {
+      const result = parseWikimediaOnThisDay({ events, births: [], deaths: [], selected });
+      expect(result.ok && result.value.events.length).toBe(40);
     }
   });
 });
@@ -81,7 +110,7 @@ describe("parseWikimediaOnThisDay on synthetic fixtures and bad shapes", () => {
     expect(parseWikimediaOnThisDay(body)).toEqual({
       ok: true,
       value: {
-        events: [{ year: -44, text: "An event with no linked article.", articles: [] }],
+        events: [{ year: -44, text: "An event with no linked article." }],
         births: [],
         deaths: [],
       },
@@ -117,7 +146,7 @@ describe("fetchWikimediaOnThisDay", () => {
     expect(OnThisDay.safeParse(result.value).success).toBe(true);
     expect(result.value.month).toBe(11);
     expect(result.value.day).toBe(11);
-    expect(result.value.events).toHaveLength(74);
+    expect(result.value.events).toHaveLength(40);
   });
 
   it("fails with the HTTP failure and the URL", async () => {

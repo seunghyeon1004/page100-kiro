@@ -92,6 +92,7 @@ Requirements: `requirements.md`. Design: `design.md`. A task is ticked only afte
   - Requirements: 15.4, 16.3, 16.4. Verify: `npx tsx scripts/refresh-snapshot.ts && npm test -- test/sources/snapshot.test.ts`, then a second run leaves `git diff --stat src/sources/snapshot/` empty
   - Commit: `sources: boot snapshot from recorded fixtures`
   - Done: `npx tsx scripts/refresh-snapshot.ts` wrote `src/sources/snapshot/snapshot.json` (529,001 bytes, all seven sources, no network); `npm test -- test/sources/snapshot.test.ts` gave "Test Files  1 passed (1) / Tests  4 passed (4)". A second run produced a file `cmp` reported identical to the first (`git diff --stat` cannot show it because the file is not yet committed; after your commit it will be empty). Replay note: the replay `delay` passes the 30 s retry wait at once and never fires the 10 s request timeout, so a recorded response is never cut short.
+  - Amended 2026-11-11 (rule-compilers owner answers 4 and 5): requirement 12.7 caps the on-this-day lists at 40 entries plus `selected` and drops `articles`; the snapshot was rebuilt offline with `npx tsx scripts/refresh-snapshot.ts` and is now 118,502 bytes. Page 666 joined the registry (30 pages).
 
 - [x] 15. Full gate. Fix failures in the code, never by weakening a validator, schema or test (`tech.md`, rule 3).
   - Requirements: 18.1, 18.2, 18.3. Verify: `npm run typecheck && npm run lint && npm test && npm run build`; quote the `Test Files` and `Tests` lines
