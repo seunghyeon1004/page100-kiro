@@ -64,38 +64,47 @@ Preconditions: rule-compilers tasks for `compileAll`, `compile802` and `compile-
   - Done: `npm test -- test/server && npm run build` → `Test Files  19 passed (19)`, `Tests  193 passed (193)`, build exit 0. Also tried `node dist/server/main.js` with `REFRESH=off EDITOR_CLIENT=off PORT=38123` for three seconds: log `boot: 30 pages published, 0 failed, listening on 38123`, `/api/health` 200, SIGTERM → `shutdown: SIGTERM` and exit 0; `PORT=0 node dist/server/main.js` logged `PORT must be an integer from 1 to 65535` and exited 1. To try it yourself: `npm run dev`.
   - Commit: `server: boot, HTTP server and graceful shutdown`
 
-- [ ] 13. Stylesheet: `public/app.css`, `test/public/font-coverage.test.ts`, `test/public/app-css.test.ts` (13.1 colour values against `COLOUR_RGB`, no motion).
+- [x] 13. Stylesheet: `public/app.css`, `test/public/font-coverage.test.ts`, `test/public/app-css.test.ts` (13.1 colour values against `COLOUR_RGB`, no motion).
   - Requirements: 13.1 to 13.5. Verify: `npm test -- test/public && npm run lint`
+  - Done: `npm test -- test/public && npm run lint` → `Test Files  2 passed (2)`, `Tests  31 passed (31)`; lint exit 0. `app.css` is 6,025 bytes of the 6,144 budget. Owner's viewer notes applied: near-black page, dark keys, solid colour bars, keypad right of the screen from 62rem wide and 4:3, no CRT effects. Added a thin `<div class="foot">` (About 801, Source on GitHub) after the keypad in `render-html.ts` with one test; the GitHub link is an outbound link outside 801 and the text alternative, which `frontend.md` limits, so this is an owner-requested departure to note in the spec. The layout is checked visually in task 16/17, not by unit tests.
   - Commit: `public: screen stylesheet and font coverage`
 
-- [ ] 14. Client script: `public/app.js`, `test/public/app-source.test.ts` (1.5).
+- [x] 14. Client script: `public/app.js`, `test/public/app-source.test.ts` (1.5).
   - Requirements: 1.5, 12.1 to 12.10. Verify: `npm run typecheck && npm test -- test/public && npm run lint`
+  - Done: `npm run typecheck` exit 0 (both `tsc` runs); `npm test -- test/public` → `Test Files  3 passed (3)`, `Tests  42 passed (42)`; `npm run lint` exit 0. `app.js` is 11,935 bytes of 12,288 (a first draft was 12,317 and was cut in the code, not the budget). Behaviour in a browser is proved by task 16.
   - Commit: `public: client script`
 
-- [ ] 15. Budgets: `scripts/lib/payload.ts`, `scripts/payload.ts`, `test/scripts/payload.test.ts`. A budget that fails is fixed in the code; raising one needs the owner.
+- [x] 15. Budgets: `scripts/lib/payload.ts`, `scripts/payload.ts`, `test/scripts/payload.test.ts`. A budget that fails is fixed in the code; raising one needs the owner.
   - Requirements: 14.1, 14.2, 14.3. Verify: `npm run payload` (quote the table) and `npm test -- test/scripts/payload`
+  - Done: `npm run payload` exit 0, table: First load of /100 (br) 11552 of 24576 B; largest HTML (br) 1903 of 6144 B (`/300`); largest fragment (br) 1091 of 4096 B (`/300.frag`); app.js 11935 of 12288 B; app.css 6038 of 6144 B (served size, after the font URL rewrite); font 4624 of 6144 B; all `ok`. `npm test -- test/scripts/payload` → `Test Files  1 passed (1)`, `Tests  12 passed (12)` (includes a check that `BUDGETS` equals the table in `frontend.md`). The CSS has 106 bytes of room: the next CSS addition must come with a cut.
   - Commit: `scripts: byte budgets`
 
-- [ ] 16. Browser tests: `playwright.config.ts`, `test/e2e/guard.ts` and the seven spec files. Blocked until the owner has run `npx playwright install chromium`.
+- [x] 16. Browser tests: `playwright.config.ts`, `test/e2e/guard.ts` and the seven spec files. Blocked until the owner has run `npx playwright install chromium`.
   - Requirements: 12.2 to 12.10, 13.2, 13.3, 15.1, 15.2. Verify: `npm run e2e` (quote the passed count)
+  - Done: `npm run e2e` → `41 passed (4.0s)` (headless Chromium against `dist/server/main.js`; the seven specs keys, rotation, reveal-text, phone, no-js, not-in-service, a11y). `npm test` → `Test Files  142 passed (142)`, `Tests  1165 passed (1165)`. Changes the tests forced, all in the code or the guard: the footer links got a 44 px minimum width and an 8 px row gap; `.js .reveal` is hidden (an invisible checkbox in the tab order); `.alt:focus-within` shows the text alternative so a link inside it is never focused unseen; `test/boundaries.test.ts` now lets `test/e2e/` import `@playwright/test` (tech.md: Playwright is for e2e only). The guard has two documented exceptions, not weakenings: a Chromium 404 console line for `/NNN` and `/NNN.frag` (the designed not-in-service answer, 7.2 and 12.5) and the `style` attribute Chromium adds to its own plain-text viewer on `/550.txt`.
   - Commit: `test: browser tests in Chromium`
 
-- [ ] 17. Screenshots: `scripts/screenshots.ts`, then `npx tsx scripts/screenshots.ts`.
+- [x] 17. Screenshots: `scripts/screenshots.ts`, then `npx tsx scripts/screenshots.ts`.
   - Requirements: 15.3. Verify: `ls docs/screens` lists 34 `.png` files
+  - Done: `npx tsx scripts/screenshots.ts` → `34 screenshots in docs/screens`; `ls docs/screens/*.png | wc -l` → `34`. Looking at the desktop and phone shots found the four colour keys drawn dark (the generic key background beat the colour class); fixed by moving the `.b*` rules after the controls in `app.css`, and a computed-style check then gave red, green, yellow and blue bars with black, black, black and white text.
   - Commit: `docs: desktop and phone screenshots`
 
-- [ ] 18. Deploy files: `Dockerfile`, `.dockerignore`, `render.yaml`, `scripts/lib/runtime-copies.ts`, `scripts/env-example.ts`, `.env.example` (written by Kiro directly, `tech.md` rule 2), `test/deploy/deploy-files.test.ts` (which also fails unless `.env.example` equals what `scripts/env-example.ts` prints).
+- [x] 18. Deploy files: `Dockerfile`, `.dockerignore`, `render.yaml`, `scripts/lib/runtime-copies.ts`, `scripts/env-example.ts`, `.env.example` (written by Kiro directly, `tech.md` rule 2), `test/deploy/deploy-files.test.ts` (which also fails unless `.env.example` equals what `scripts/env-example.ts` prints).
   - Requirements: 16.1 to 16.4. Verify: `npm test -- test/deploy`
+  - Done: `npm test -- test/deploy` → `Test Files  1 passed (1)`, `Tests  15 passed (15)`; lint and typecheck clean. `render.yaml` includes `PORT: "3000"` (16.3 says every other variable) although the design notes Render sets `PORT` itself; Render honours a set `PORT`, and it matches `EXPOSE 3000`. Docker itself is not run here (task 19 proves the layout).
   - Commit: `deploy: Dockerfile, render.yaml, env example`
 
-- [ ] 19. Runtime layout without Docker: `scripts/runtime-check.ts`, run with the owner's go-ahead (its `npm ci` uses the npm network).
+- [x] 19. Runtime layout without Docker: `scripts/runtime-check.ts`, run with the owner's go-ahead (its `npm ci` uses the npm network).
   - Requirements: 16.5, 3.4. Verify: `npx tsx scripts/runtime-check.ts` prints `runtime check passed` and exits 0
+  - Done: `npx tsx scripts/runtime-check.ts` → `added 9 packages`, `boot: 30 pages published, 0 failed, listening on 62929`, `shutdown: SIGTERM`, `runtime check passed`, exit 0. The temporary directory (under the OS temp dir, as the design says, so a missing runtime dependency cannot be masked by the repository's `node_modules`) was removed and no server process was left.
   - Commit: `scripts: prove the runtime image layout`
 
-- [ ] 20. Full gate. Fix failures in the code or data, never by weakening a check, schema or test (`tech.md`, rule 3).
+- [x] 20. Full gate. Fix failures in the code or data, never by weakening a check, schema or test (`tech.md`, rule 3).
   - Requirements: 17.1, 17.2. Verify: `npm run typecheck && npm run lint && npm test && npm run build && npm run grid:check && npm run payload`, then `npm run e2e`; quote the `Test Files` and `Tests` lines
+  - Done: `npm run typecheck && npm run lint && npm test && npm run grid:check && npm run payload && npm run e2e` exit 0 (`npm run build` exit 0 earlier in the session; the e2e web server builds again): `Test Files  143 passed (143)`, `Tests  1180 passed (1180)`, `30 pages, 43 screens, 0 problems`, payload all `ok`, `41 passed (3.9s)`.
   - Commit: none unless a fix was needed
 
-- [ ] 21. Counts: `npx vitest list | grep -cE "Property [0-9]+:"` prints 61 (52 before this spec, plus 9), and `grep -cE "^Property [0-9]+:" .kiro/specs/server-and-viewer/design.md` prints 9.
+- [x] 21. Counts: `npx vitest list | grep -cE "Property [0-9]+:"` prints 61 (52 before this spec, plus 9), and `grep -cE "^Property [0-9]+:" .kiro/specs/server-and-viewer/design.md` prints 9.
   - Requirements: 17.1. Verify: the two commands above and `npm test`
+  - Done: `npx vitest list | grep -cE "Property [0-9]+:"` → `61`; `grep -cE "^Property [0-9]+:" .kiro/specs/server-and-viewer/design.md` → `9`; `npm test` → `Test Files  143 passed (143)`, `Tests  1180 passed (1180)`.
   - Commit: `docs: server-and-viewer test counts`

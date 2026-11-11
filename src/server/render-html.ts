@@ -105,6 +105,11 @@ const FORM =
   '<input id="p" name="p" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" required autocomplete="off">' +
   '<button type="submit">Go</button></form>';
 
+/** The thin row of small links under the keypad (owner's viewer notes, 2026-11-11). */
+const FOOT =
+  '<div class="foot"><a id="about" href="/801">About</a>' +
+  '<a id="src" href="https://github.com/seunghyeon1004/page100-kiro" rel="noopener noreferrer">Source on GitHub</a></div>';
+
 /** The complete document of a view. */
 export function renderHtml(view: View, urls: AssetUrls): string {
   const { page } = view;
@@ -126,6 +131,7 @@ export function renderHtml(view: View, urls: AssetUrls): string {
     navHtml(view) +
     FORM +
     keypadHtml(view) +
+    FOOT +
     '</main><div id="live" class="vh" aria-live="polite"></div></body></html>';
   return head + body;
 }

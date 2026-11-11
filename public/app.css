@@ -1,1 +1,430 @@
-/* Placeholder: task 13 of server-and-viewer writes the stylesheet. */
+@font-face {
+  font-family: Bedstead;
+  src: url(/assets/bedstead-extended-subset.woff2) format("woff2");
+  font-display: block;
+}
+
+:root {
+  --k: #000000;
+  --r: #ff0000;
+  --g: #00ff00;
+  --y: #ffff00;
+  --b: #0000ff;
+  --m: #ff00ff;
+  --c: #00ffff;
+  --w: #ffffff;
+  --page: #0a0a0a;
+  --ink: #d0d0d0;
+  --dim: #9a9a9a;
+  --key: #1c1c1c;
+  --edge: #3a3a3a;
+  color-scheme: dark;
+  background: var(--page);
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font:
+    1rem/1.4 system-ui,
+    sans-serif;
+}
+
+[hidden],
+.js .nojs,
+.js .reveal {
+  display: none !important;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+}
+
+/* 40 by 24 cells of 0.75em by 1em: 30em by 24em (5:4). */
+.screen {
+  width: 30em;
+  font:
+    1em/1 Bedstead,
+    monospace;
+  font-size: var(--fs);
+  background: var(--k);
+  color: var(--w);
+}
+
+@supports (width: round(down, 1px, 1px)) {
+  .screen {
+    font-size: round(down, var(--fs), 1px);
+  }
+
+  @media (min-width: 480px) {
+    .screen {
+      font-size: round(down, var(--fs), 4px);
+    }
+  }
+}
+
+.r {
+  display: flex;
+  height: 1em;
+}
+
+.r > span {
+  flex: none;
+  height: 1em;
+  white-space: pre;
+  color: var(--fg, var(--w));
+}
+
+.fk {
+  --fg: var(--k);
+}
+.fr {
+  --fg: var(--r);
+}
+.fg {
+  --fg: var(--g);
+}
+.fy {
+  --fg: var(--y);
+}
+.fb {
+  --fg: var(--b);
+}
+.fm {
+  --fg: var(--m);
+}
+.fc {
+  --fg: var(--c);
+}
+.fw {
+  --fg: var(--w);
+}
+
+.screen .conceal {
+  color: transparent;
+}
+
+#reveal:checked ~ .view .conceal {
+  color: var(--fg, var(--w));
+}
+
+/* Layout: one column, the controls below the screen. */
+.tv {
+  --fs: min(100cqw / 30, (100dvh - 1rem) / 24);
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding: 0.5rem;
+}
+
+.tv > * {
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto 0.75rem;
+}
+
+.tv > .view {
+  width: auto;
+  max-width: none;
+}
+
+@media (min-width: 62rem) and (min-aspect-ratio: 4/3) {
+  .tv {
+    --fs: min((100cqw - 20rem) / 30, (100dvh - 1rem) / 24);
+    grid-template-columns: auto 18rem;
+    grid-template-rows: 1fr repeat(5, auto) 1fr;
+    column-gap: 2rem;
+    justify-content: center;
+  }
+
+  .tv::before {
+    content: "";
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .tv > * {
+    grid-column: 2;
+    max-width: none;
+  }
+
+  .tv > .view {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: center;
+    margin: 0;
+  }
+}
+
+/* Controls: dark keys, the four colour keys as solid bars. */
+.reveal {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reveal:focus-visible + label {
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+}
+
+.nav,
+.keypad {
+  display: grid;
+  gap: 8px;
+}
+
+.nav {
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.nav > * {
+  grid-column: span 4;
+}
+
+.nav > .q {
+  grid-column: span 3;
+}
+
+.keypad {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.go {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.go label {
+  flex: 1 0 100%;
+  font-size: 0.8125rem;
+  color: var(--dim);
+}
+
+.go input {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav > *,
+.keypad > *,
+.go button,
+.go input,
+label.nojs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--key);
+  color: #e0e0e0;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.keypad > * {
+  min-height: 48px;
+  font-size: 1.125rem;
+}
+
+.go input {
+  border-color: #707070;
+  font-size: 1.125rem;
+  cursor: text;
+}
+
+.go button {
+  padding: 0 1rem;
+}
+
+.nav > .q {
+  border-color: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k);
+}
+
+.nav > .q.bb {
+  color: var(--w);
+}
+
+.bk {
+  background: var(--k);
+}
+.br {
+  background: var(--r);
+}
+.bg {
+  background: var(--g);
+}
+.by {
+  background: var(--y);
+}
+.bb {
+  background: var(--b);
+}
+.bm {
+  background: var(--m);
+}
+.bc {
+  background: var(--c);
+}
+.bw {
+  background: var(--w);
+}
+
+[aria-pressed="true"] {
+  background: #d0d0d0;
+  border-color: #d0d0d0;
+  color: var(--page);
+}
+
+[aria-disabled="true"] {
+  color: #777777;
+  cursor: default;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 1.25rem;
+  font-size: 0.8125rem;
+}
+
+.foot a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--dim);
+  text-underline-offset: 3px;
+}
+
+/* Text view and text alternative. */
+.alt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.text .screen {
+  display: none;
+}
+
+.text .alt,
+.alt:focus-within,
+.text .view {
+  position: static;
+}
+
+.text .view {
+  width: 100%;
+  max-width: 38rem;
+}
+
+.text .alt,
+.alt:focus-within {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.alt a {
+  color: var(--c);
+}
+
+.alt table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.alt th,
+.alt td {
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+@media (forced-colors: active) {
+  .screen {
+    forced-color-adjust: none;
+  }
+
+  .nav > *,
+  .keypad > *,
+  .go button,
+  .go input,
+  label.nojs {
+    border-color: ButtonText;
+  }
+
+  [aria-pressed="true"] {
+    border-color: Highlight;
+  }
+
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .tv > :not(.view),
+  .screen,
+  #live {
+    display: none;
+  }
+
+  .tv::before {
+    display: none;
+  }
+
+  .tv > .view,
+  .alt {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+
+  .alt a {
+    color: #000000;
+  }
+}

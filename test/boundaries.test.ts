@@ -178,7 +178,7 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
     }
   });
 
-  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths, and in test/server also node:zlib and node:http (server-and-viewer 17.1)", () => {
+  it("imports only vitest, fast-check, node:fs, node:path, node:url and relative paths, and in test/server also node:zlib and node:http, and in test/e2e also @playwright/test (server-and-viewer 17.1)", () => {
     const allowed = new Set(["vitest", "fast-check", "node:fs", "node:path", "node:url"]);
     // The server tests decode compressed bodies and talk to the app on 127.0.0.1 (design.md, "Test plan").
     const serverOnly = new Set(["node:zlib", "node:http"]);
@@ -187,7 +187,9 @@ describe("test helpers (requirements 19.3 and 19.4)", () => {
         const ok =
           specifier.startsWith(".") ||
           allowed.has(specifier) ||
-          (file.startsWith("test/server/") && serverOnly.has(specifier));
+          (file.startsWith("test/server/") && serverOnly.has(specifier)) ||
+          // Playwright is for test/e2e only (tech.md).
+          (file.startsWith("test/e2e/") && specifier === "@playwright/test");
         expect(ok, `${file} imports ${specifier}`).toBe(true);
       }
     }

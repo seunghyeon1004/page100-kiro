@@ -41,6 +41,13 @@ describe("renderHtml head and body (requirements 9.1, 9.2)", () => {
     expect(html).toContain('<div id="keypad" class="keypad" hidden>');
   });
 
+  it("ends the controls with the About link and the source link", () => {
+    expect(html).toContain(
+      '<div class="foot"><a id="about" href="/801">About</a>' +
+        '<a id="src" href="https://github.com/seunghyeon1004/page100-kiro" rel="noopener noreferrer">Source on GitHub</a></div></main>',
+    );
+  });
+
   it("embeds the fragment byte for byte", () => {
     expect(html).toContain(renderFrag(view));
   });

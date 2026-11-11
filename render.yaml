@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: page100
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: EDITOR_MODEL
+        value: claude-opus-5-5
+      - key: MAX_MODEL_CALLS_PER_DAY
+        value: "60"
+      - key: EDITOR_MAX_CALLS_PER_BOOT
+        value: "30"
+      - key: EDITOR_BOOT_DELAY_MS
+        value: "600000"
+      - key: EDITOR_MIN_INTERVAL_MS
+        value: "10800000"
+      - key: EDITOR_CLIENT
+        value: anthropic
+      - key: REFRESH
+        value: "on"
+      - key: PUBLIC_ORIGIN
+        sync: false
