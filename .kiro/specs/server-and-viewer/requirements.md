@@ -127,6 +127,8 @@ Recorded before the design and tasks were adjusted. They amend requirements 2, 6
 
 6.3 THE scheduler SHALL publish a page an edition returns only WHILE the `fetchedAt` of the source it was built from is unchanged since the edition started, AND SHALL recompile and publish page 802 after each edition and each successful fetch with the status mapped as the ai-editor design gives it.
 
+6.3a (added by hand, 2026-11-11, after the first run with a real key dropped all 12 pages of an edition that overlapped the boot refresh) WHEN an edition drops one or more pages under 6.3, THE scheduler SHALL run one reuse pass (no model call, 6.8) on the current data and publish every AI page it returns. Verify: `npm test -- test/server/scheduler.test.ts`.
+
 6.4 THE app SHALL create one call budget (`maxModelCallsPerDay`, `editorMaxCallsPerBoot`) and one draft cache per process, AND SHALL pass the global `fetch` to `createEditorClient`.
 
 6.5 THE scheduler SHALL log one line per edition and forward the editor's own lines unchanged.

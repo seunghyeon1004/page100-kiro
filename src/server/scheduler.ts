@@ -269,6 +269,17 @@ export function createScheduler(deps: SchedulerDeps): Scheduler {
         else dropped += 1;
       }
       const counts = publishPages(fresh, now);
+      // A page dropped because its source was refreshed during the edition is not lost when the
+      // refreshed text is the same: a reuse pass on the current data finds its accepted draft in
+      // the cache and publishes it, at no model call (requirement 6.3a, added by hand).
+      if (dropped > 0) {
+        const again = await run(current, store.editorStatus() ?? emptyEditorStatus(), now, "reuse");
+        const rescued = publishPages(
+          again.pages.filter((page) => page.editor === "ai"),
+          now,
+        );
+        log(`edition: ${String(rescued.published)} dropped pages published from cached drafts`);
+      }
       publish802(now);
       const failed = result.outcomes.filter((o) => "outcome" in o).length + counts.failed;
       log(

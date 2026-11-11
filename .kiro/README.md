@@ -87,13 +87,14 @@ The auditor's report is worth reading as it is (`20-task-auditor-agent.txt`). Ev
 - One fix to a Kiro-written property test (`test/server/render-html.property.test.ts`): its "raw text must not appear" assertion was unsound when one generated string was the escaped form of another. The assertion now excludes exactly that case.
 - The on-this-day normaliser's choice of which 40 entries to keep (`12.7a` in the pages-and-sources spec), its two tests, and re-recording three inline snapshots after looking at the new pages.
 - Replacing the placeholder test for `pages/` with content tests once the real pages existed.
+- A scheduler fix (`6.3a` in the server-and-viewer spec): the first run with a real key dropped all 12 pages of an edition because the boot refresh landed while it ran. Dropped pages are now published from the draft cache when the refreshed text is the same.
 - One CSS fix and its three browser tests, found by driving the page by hand in headless Chromium: the hidden text alternative's table was a scroll container, which Chromium makes a Tab stop, so the first Tab revealed the alternative and scrolled the screen away. Kiro's 41 browser tests had not caught it.
 - `README.md`, `LICENSE`, `.gitignore`, commits and pushes.
 
 ## Not verified
 
 - The Docker image has not been built (no Docker on the build machine). `scripts/runtime-check.ts` copies exactly what the Dockerfile copies into a temp directory, runs `npm ci --omit=dev` and boots the server there, and a test keeps the two lists in step.
-- The deployed service on Render, and the AI editor running on a schedule in production. The editor was exercised with real model calls only through the recording script.
+- The deployed service on Render. Locally, the built server was run with live sources and a real key: one edition, 11 model calls, 2 drafts sent back, 12 pages published, counters on page 802. It has not run for days on a schedule.
 - The daily model-call cap is per process: a restart resets it. The per-boot cap, the ten-minute boot delay and the three-hour minimum interval bound the cost on a host that restarts.
 - A real screen reader has not been used on it. The structure is tested (one `h1`, grid hidden, live region, named buttons, visible focus), not the listening experience.
 - `PostFileSave` fired for Kiro's own writes in the CLI; the IDE was not used.
